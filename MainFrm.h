@@ -36,6 +36,7 @@ protected:  // コントロール バー用メンバ
 
 private:
 	CImageList	ImageToolBar;
+	CImageList	ImageToolBarDisable;
 
 // 生成された、メッセージ割り当て関数
 protected:

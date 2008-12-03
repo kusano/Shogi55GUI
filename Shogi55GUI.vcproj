@@ -222,6 +222,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\NewGameDialog.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Shogi55GUI.cpp"
 				>
 			</File>
@@ -289,6 +293,10 @@
 			</File>
 			<File
 				RelativePath=".\engine\mt19937ar.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NewGameDialog.h"
 				>
 			</File>
 			<File

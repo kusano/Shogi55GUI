@@ -23,6 +23,13 @@ public:
 	};
 
 private:
+	struct LOG
+	{
+		int		remain[2];
+		int		lastmovefrom;
+		int		lastmoveto;
+	};
+
 	CBoard		Board;
 	CMinMaxBot	Bot;
 	MOVE		BestMove;
@@ -32,6 +39,7 @@ private:
 	Image		ImagePiece;
 	Image		ImageSelect;
 	Image		ImageSearch;
+	Image		ImageTimer;
 
 	int			PlayerType[2];		//	0 CPU	1 人
 
@@ -39,6 +47,11 @@ private:
 	int			SelectPosition;
 	int			LastMoveFrom;
 	int			LastMoveTo;
+	int			StartTime;			//	考慮開始時刻
+	int			RemainTime[2];		//	残時間
+	int			ElapseTime[2];		//	使用時間
+	bool		TurnBoard;			//	盤面を反転しているか
+	vector<LOG>	Log;				//	待った用
 
 	CWinThread *SearchThread;
 
@@ -46,6 +59,9 @@ private:
 	int			XYToPosition( int x, int y );
 	void		Move( MOVE move );
 	void		GetBotMove();
+	void		DrawTimer( Graphics *g );
+	void		NewGame();
+	void		Undo();
 
 protected: // シリアル化からのみ作成します。
 	CShogi55GUIView();
@@ -86,6 +102,11 @@ public:
 	afx_msg void OnUpdateStop(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateHint(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateEdit(CCmdUI *pCmdUI);
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnRotate();
+	afx_msg void OnNewgame();
+	afx_msg void OnUndo();
+	afx_msg void OnStop();
 };
 
 #ifndef _DEBUG  // Shogi55GUIView.cpp のデバッグ バージョン

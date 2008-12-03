@@ -43,20 +43,25 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 作成できませんでした。
 	}
 
-	HBITMAP bitmap = (HBITMAP)::LoadImage( NULL, _T("toolbar.bmp"), IMAGE_BITMAP,
+	HBITMAP toolbar = (HBITMAP)::LoadImage( NULL, _T("toolbar.bmp"), IMAGE_BITMAP,
+							0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION );
+	HBITMAP disable = (HBITMAP)::LoadImage( NULL, _T("toolbard.bmp"), IMAGE_BITMAP,
 							0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION );
 	HBITMAP mask = (HBITMAP)::LoadImage( NULL, _T("toolbarm.bmp"), IMAGE_BITMAP,
 							0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION );
-	if ( bitmap == NULL  ||  mask == NULL )
+	if ( toolbar == NULL  ||  mask == NULL )
 	{
 		TRACE0("ツールバー画像の読み込みに失敗しました。\n");
 		return -1;
 	}
 
 	ImageToolBar.Create( 32, 32, ILC_COLOR24 | ILC_MASK, 0, 1 );
-	ImageToolBar.Add( CBitmap::FromHandle(bitmap), CBitmap::FromHandle(mask) );
-
+	ImageToolBar.Add( CBitmap::FromHandle(toolbar), CBitmap::FromHandle(mask) );
 	m_wndToolBar.GetToolBarCtrl().SetImageList( &ImageToolBar );
+
+	ImageToolBarDisable.Create( 32, 32, ILC_COLOR24 | ILC_MASK, 0, 1 );
+	ImageToolBarDisable.Add( CBitmap::FromHandle(disable), CBitmap::FromHandle(mask) );
+	m_wndToolBar.GetToolBarCtrl().SetDisabledImageList( &ImageToolBarDisable );
 
 	//if (!m_wndDlgBar.Create(this, IDR_MAINFRAME, 
 	//	CBRS_ALIGN_TOP, AFX_IDW_DIALOGBAR))

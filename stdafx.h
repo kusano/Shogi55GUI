@@ -54,6 +54,9 @@
 
 using namespace Gdiplus;
 
+#include <vector>
+
+using namespace std;
 
 
 

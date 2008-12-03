@@ -76,7 +76,8 @@ void LearningBonanza()
 			if ( ! board.FromString( sboard ) )
 				continue;
 
-			fprintf( stderr, "step = %d, n = %d    \r", step, n );
+			if ( n % 100 == 0 )
+				fprintf( stderr, "step = %d, n = %d    \r", step, n );
 
 			MOVE m0;	//	Šû•ˆ‚ÌŽè
 			m0.FromInt( smove );
@@ -205,7 +206,7 @@ void LearningBonanza()
 				double T = 1 / ( 1 + exp(-3*(xi-xi0)/3500.0) );
 				double dT = T * ( 1 - T );
 
-				for ( int i=0; i<CBoard::ELEMNUM; i++ )
+				for ( int i=0; i<22/*CBoard::ELEMNUM*/; i++ )
 				if ( e[i] != e0[i] )
 				{
 					dJ[i] += dT * ( e[i] - e0[i] ) * turn;
@@ -215,16 +216,16 @@ void LearningBonanza()
 
 			n++;
 
-			if ( n >= 10000 )
-				break;
+			//if ( n >= 10000 )
+			//	break;
 		}
 
 		//for ( int i=0;i<78; i++ )
 		//	weight[i] -= 128 * sign( dJ[i] );
 		//for ( int i=0;i<CBoard::ELEMNUM; i++ )
 		for ( int i=0;i<22; i++ )
-			if ( freq[i] >= n / 100 )
-				weight[i] -= 128 * sign( dJ[i] );
+			//if ( freq[i] >= n / 100 )
+			weight[i] -= 128 * sign( dJ[i] );
 		Constrain( weight );
 
 		if ( leaf != NULL )

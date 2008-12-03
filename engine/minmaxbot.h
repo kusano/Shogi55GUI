@@ -55,10 +55,10 @@ private:
 	int			MaxDepth;				//	最大深さ
 	int			TimeLimit;				//	制限時間 [ms]　0で無効
 	int			ValueDelta;				//	評価関数変化分
-
 	clock_t		StartTime;				//	探索開始時刻
 	int			EvaluateCount;			//	盤面評価の回数
 	int			DisplayMode;			//	状態の表示方法
+	bool		HaltFlag;				//	trueになったら強制終了
 
 	MOVE		GetMinMax( const CBoard *board );
 	int			MinMax( CBoard *board, int depth, int maxdepth, int alpha, int beta );
@@ -69,6 +69,7 @@ public:
 				CMinMaxBot();
 	void		Initialize();
 	MOVE		GetNext( const CBoard *board, vector<MOVE> *sequence=NULL, int *score=NULL );
+	void		Halt();
 
 	void		SetMaxDepth( int depth );
 	void		SetTimeLimit( int time );

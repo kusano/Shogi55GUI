@@ -165,6 +165,21 @@ BEGIN
     LTEXT           "TODO: ダイアログ バーをレイアウトしてください。 ",IDC_STATIC,12,4,300,8
 END
 
+IDD_NEWGAME DIALOGEX 0, 0, 208, 76
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "新規ゲーム"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "▲先手(&B)",IDC_STATIC,6,6,138,30
+    CONTROL         "人(&H)",IDC_BHUMAN,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,18,34,10
+    CONTROL         "コンピュータ(&C)",IDC_BBOT,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,78,18,61,10
+    GROUPBOX        "△後手(&W)",IDC_STATIC,6,42,138,30
+    CONTROL         "人(&H)",IDC_WHUMAN,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,12,54,34,10
+    CONTROL         "コンピュータ(&C)",IDC_WBOT,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,78,54,61,10
+    DEFPUSHBUTTON   "OK",IDOK,156,6,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,156,24,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -219,6 +234,14 @@ BEGIN
         RIGHTMARGIN, 228
         TOPMARGIN, 7
         BOTTOMMARGIN, 48
+    END
+
+    IDD_NEWGAME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 201
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 69
     END
 END
 #endif    // APSTUDIO_INVOKED

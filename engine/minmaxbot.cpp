@@ -54,6 +54,8 @@ MOVE CMinMaxBot::GetNext( const CBoard *board, vector<MOVE> *sequence/*=NULL*/, 
 	if ( sequence != NULL )
 		sequence->clear();
 
+	HaltFlag = false;
+
 	MOVE move = GetMinMax( board );
 	
 	if ( DisplayMode == DM_NORMAL )
@@ -66,6 +68,17 @@ MOVE CMinMaxBot::GetNext( const CBoard *board, vector<MOVE> *sequence/*=NULL*/, 
 		*score = BestScore;
 
 	return move;
+}
+
+
+
+/*
+ *	Halt
+ *		‹­§I—¹
+ */
+void CMinMaxBot::Halt()
+{
+	HaltFlag = true;
 }
 
 
@@ -578,9 +591,14 @@ int CMinMaxBot::Evaluate( const CBoard *board )
 	EvaluateCount++;
 
 	if ( EvaluateCount % 0x1000 == 0 )
+	{
+		if ( HaltFlag )
+			throw 0;
+
 		if ( TimeLimit > 0  &&
 			 clock() - StartTime > TimeLimit * 1000 / CLOCKS_PER_SEC )
 			throw 0;
+	}
 
 	return board->GetValue() + ((unsigned int)board->GetHash()^ValueDelta)%1024 - 512;
 }

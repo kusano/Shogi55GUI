@@ -6,6 +6,7 @@
 
 #include "Shogi55GUIDoc.h"
 #include "Shogi55GUIView.h"
+#include "NewGameDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -15,6 +16,7 @@ static const int	PW		= 44;		//	駒幅
 static const int	PH		= 48;		//	駒高
 
 static const int	TIMER_SEARCH	= 100;	//	探索が終了したかチェック
+static const int	TIMER_TIMER		= 101;	//	時計を進める
 
 static UINT SearchMove( CShogi55GUIView *view );
 
@@ -31,6 +33,11 @@ BEGIN_MESSAGE_MAP(CShogi55GUIView, CView)
 	ON_UPDATE_COMMAND_UI(ID_STOP, &CShogi55GUIView::OnUpdateStop)
 	ON_UPDATE_COMMAND_UI(ID_HINT, &CShogi55GUIView::OnUpdateHint)
 	ON_UPDATE_COMMAND_UI(ID_EDIT, &CShogi55GUIView::OnUpdateEdit)
+	ON_WM_CREATE()
+	ON_COMMAND(ID_ROTATE, &CShogi55GUIView::OnRotate)
+	ON_COMMAND(ID_NEWGAME, &CShogi55GUIView::OnNewgame)
+	ON_COMMAND(ID_UNDO, &CShogi55GUIView::OnUndo)
+	ON_COMMAND(ID_STOP, &CShogi55GUIView::OnStop)
 END_MESSAGE_MAP()
 
 // CShogi55GUIView コンストラクション/デストラクション
@@ -41,13 +48,16 @@ CShogi55GUIView::CShogi55GUIView()
 	, ImagePiece( _T("piece.png") )
 	, ImageSelect( _T("select.png") )
 	, ImageSearch( _T("search.png") )
+	, ImageTimer( _T("timer.png") )
 	, Mode( M_HUMANTURN )
 	, SelectPosition( -1 )
+	, TurnBoard( false )
 	, SearchThread( NULL )
 {
 	PlayerType[0] = 1;
-	PlayerType[1] = 0;
+	PlayerType[1] = 1;
 
+	//	タイマーの精度を上げる
 	::timeBeginPeriod( 1 );
 
 	Board.Initialize();
@@ -56,6 +66,7 @@ CShogi55GUIView::CShogi55GUIView()
 
 CShogi55GUIView::~CShogi55GUIView()
 {
+	::timeEndPeriod( 1 );
 }
 
 BOOL CShogi55GUIView::PreCreateWindow(CREATESTRUCT& cs)
@@ -75,21 +86,40 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 	if (!pDoc)
 		return;
 
+	//	更新リージョンがタイマーの場所ならタイマーを描画して終了
+	//	Vistaだとうまく動かない？
+	CRect update;
+	GetUpdateRect( &update );
+
+	if ( update == CRect(452,12,452+9*12,12+4*24) )
+	{
+		Graphics g( *pDC );
+		DrawTimer( &g );
+	}
+
 	CRect client;
 	GetClientRect( &client );
 
+	//	バッファ
 	Bitmap backbmp( PW*13, PH*7 );
 	Graphics g( &backbmp );
 
+	//	背景
 	g.DrawImage( &ImageBackground, 0, 0 );
     g.DrawImage( &ImageBoard, 0, 0 );
 
+	//	タイマー
+	DrawTimer( &g );
+
+	//	選択カーソル
 	if ( SelectPosition >= 0 )
 	{
 		int x, y;
 		PositionToXY( SelectPosition, &x, &y );
 		g.DrawImage( &ImageSelect, x, y, Board.GetTurn()*PW*2, 0, PW, PH, UnitPixel );
 	}
+
+	//	最終手表示
 	if ( LastMoveFrom >= 0 )
 	{
 		int x, y;
@@ -103,14 +133,19 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 			g.DrawImage( &ImageSelect, x, y, (Board.GetTurn()^1)*PW*2, 0, PW, PH, UnitPixel );
 	}
 
-
+	//	駒
 	for ( int y=0; y<5; y++ )
 	for ( int x=0; x<5; x++ )
 	{
 		int p = Board.GetPiece( x+1, y+1 );
 		int xx, yy;
 		PositionToXY( y*5+x+6, &xx, &yy );
-		g.DrawImage( &ImagePiece, xx, yy, p*PW, 0, PW, PH, UnitPixel );
+
+		int px = p;
+		if ( px != 0  &&  TurnBoard )
+			px ^= 1;
+
+		g.DrawImage( &ImagePiece, xx, yy, px*PW, 0, PW, PH, UnitPixel );
 	}
 
 	for ( int m=2; m<14; m++ )
@@ -120,33 +155,69 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 		{
 			int x, y;
 			if ( m % 2 == 0 )
-				PositionToXY( (m-2)/2+31, &x, &y );
+				PositionToXY( 36-(m-2)/2, &x, &y );
 			else
 				PositionToXY( (m-3)/2, &x, &y );
 
+			int px = m;
+			if ( px != 0  &&  TurnBoard )
+				px ^= 1;
+
 			for ( int i=0; i<n; i++ )
-				g.DrawImage( &ImagePiece, x+(n-i-1)*(m%2==0?8:-8), y, m*PW, 0, PW, PH, UnitPixel );
+				g.DrawImage( &ImagePiece, x+(n-i-1)*(m%2==0?8:-8), y, px*PW, 0, PW, PH, UnitPixel );
 		}
 	}
 
-	//if ( TurnBoard )
-	//	backbmp.RotateFlip( Gdiplus::Rotate180FlipNone );
-
+	//	探索中
 	if ( Mode == M_BOTTUNRN )
 		g.DrawImage( &ImageSearch, 0, 0 );
 
+	//	転送
 	Graphics graphics( *pDC );
 	graphics.DrawImage( &backbmp, 0, 0 );
 }
+
+void CShogi55GUIView::DrawTimer( Graphics *g )
+{
+	int turn = Board.GetTurn();
+	int elapse = ::timeGetTime() - StartTime;
+
+	int time[4] = {
+		RemainTime[0] - ( turn==0 ? elapse : 0 ),	//	先手残時間
+		turn == 0 ? elapse : ElapseTime[0],			//	先手使用時間
+		RemainTime[1] - ( turn==1 ? elapse : 0 ),	//	後手残時間
+		turn == 1 ? elapse : ElapseTime[1],			//	後手使用時間
+	};
+
+	for ( int i=0; i<4; i++ )
+	{
+		int dig[9];
+
+		dig[0] = time[i] / 60 / 1000 / 10 % 10;
+		if ( dig[0] == 0 )  dig[0] = 12;
+		dig[1] = time[i] / 60 / 1000 % 10;
+		dig[2] = 10;
+		dig[3] = time[i] / 1000 / 10 % 6;
+		dig[4] = time[i] / 1000 % 10;
+		dig[5] = 11;
+		dig[6] = time[i] / 100 % 10;
+		dig[7] = time[i] / 10 % 10;
+		dig[8] = time[i] % 10;
+
+		for ( int j=0; j<9; j++ )
+			g->DrawImage( &ImageTimer, 452+j*12, 12+i*24, dig[j]*12, 0, 12, 24, UnitPixel );
+	}
+}
+
 
 /*
  *	PositionToXY
  *	XYToPosition
  *
  *	┌───┬───────┐
- *	│ 3  2 │10  9  8  7  6│
- *	│ 4  1 │15 14 13 12 11├───┐
- *	│ 5  0 │20 19 18 17 16│31 36 │
+ *	│ 2  3 │10  9  8  7  6│
+ *	│ 1  4 │15 14 13 12 11├───┐
+ *	│ 0  5 │20 19 18 17 16│31 36 │
  *	└───┤25 24 23 22 21│32 35 │
  *	        │30 29 28 27 26│33 34 │
  *	        └───────┴───┘
@@ -154,12 +225,15 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 bool CShogi55GUIView::PositionToXY( int pos, int *x, int *y )
 {
 	int xy[37][2] = {
-		{ 2, 3}, { 2, 2}, { 2, 1}, { 1, 1}, { 1, 2}, { 1, 3}, { 8, 1}, { 7, 1}, 
+		{ 1, 3}, { 1, 2}, { 1, 1}, { 2, 1}, { 2, 2}, { 2, 3}, { 8, 1}, { 7, 1}, 
 		{ 6, 1}, { 5, 1}, { 4, 1}, { 8, 2}, { 7, 2}, { 6, 2}, { 5, 2}, { 4, 2}, 
 		{ 8, 3}, { 7, 3}, { 6, 3}, { 5, 3}, { 4, 3}, { 8, 4}, { 7, 4}, { 6, 4}, 
 		{ 5, 4}, { 4, 4}, { 8, 5}, { 7, 5}, { 6, 5}, { 5, 5}, { 4, 5}, {10, 3}, 
 		{10, 4}, {10, 5}, {11, 5}, {11, 4}, {11, 3}, 
 	};
+
+	if ( TurnBoard )
+		pos = 36 - pos;
 
 	if ( pos < 0  ||  37 <= pos )
 	{
@@ -177,9 +251,9 @@ int CShogi55GUIView::XYToPosition( int x, int y )
 {
 	int position[7][13] = {
 		{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-		{ -1,  3,  2, -1, 10,  9,  8,  7,  6, -1, -1, -1, -1 },
-		{ -1,  4,  1, -1, 15, 14, 13, 12, 11, -1, -1, -1, -1 },
-		{ -1,  5,  0, -1, 20, 19, 18, 17, 16, -1, 31, 36, -1 },
+		{ -1,  2,  3, -1, 10,  9,  8,  7,  6, -1, -1, -1, -1 },
+		{ -1,  1,  4, -1, 15, 14, 13, 12, 11, -1, -1, -1, -1 },
+		{ -1,  0,  5, -1, 20, 19, 18, 17, 16, -1, 31, 36, -1 },
 		{ -1, -1, -1, -1, 25, 24, 23, 22, 21, -1, 32, 35, -1 },
 		{ -1, -1, -1, -1, 30, 29, 28, 27, 26, -1, 33, 34, -1 },
 		{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -191,20 +265,97 @@ int CShogi55GUIView::XYToPosition( int x, int y )
 	if ( xx < 0  ||  13 <= xx  ||  yy < 0  ||  7 <= yy )
 		return -1;
 	else
-		return position[yy][xx];
+	{
+		int pos = position[yy][xx];
+
+		if ( pos < 0 )
+			return pos;
+		else
+			return TurnBoard ? 36 - pos : pos;
+	}
+}
+
+
+/*
+ *	NewGame
+ *		新規ゲーム開始
+ */
+void CShogi55GUIView::NewGame()
+{
+	const int time = 1200000;	//	20分
+
+	Board.Initialize();
+	Log.clear();
+	
+	LastMoveFrom = -1;
+	LastMoveTo = -1;
+	SelectPosition = -1;
+
+	RemainTime[0] = RemainTime[1] = time;	//	20分
+	ElapseTime[0] = ElapseTime[1] = 0;
+	StartTime = ::timeGetTime();
+
+	LOG log;
+	log.remain[0] = log.remain[1] = time;
+	log.lastmovefrom = -1;
+	log.lastmoveto = -1;
+	Log.push_back( log );
+
+	if ( PlayerType[0] == 0 )
+	{
+		Mode = M_BOTTUNRN;
+		GetBotMove();
+	}
+	else
+	{
+		Mode = M_HUMANTURN;
+	}
+
+	InvalidateRect( NULL, FALSE );
+}
+
+
+/*
+ *	Undo
+ *		待った
+ */
+void CShogi55GUIView::Undo()
+{
+	if ( Board.GetStep() >= 2 )
+	{
+		Board.Undo();
+		Board.Undo();
+
+		LOG log = Log[ Log.size() - 3 ];
+		Log.pop_back();
+		Log.pop_back();
+
+		RemainTime[0] = log.remain[0];
+		RemainTime[1] = log.remain[1];
+		ElapseTime[0] = 0;
+		ElapseTime[1] = 0;
+		LastMoveFrom = log.lastmovefrom;
+		LastMoveTo = log.lastmoveto;
+
+		StartTime = ::timeGetTime();
+		SelectPosition = -1;
+
+		InvalidateRect( NULL, FALSE );
+	}
 }
 
 
 
 void CShogi55GUIView::Move( MOVE move )
 {
-	//DWORD current = ::timeGetTime();
-	//int elapse = ( current - StartTime ) / 1000 * 1000;	//	切り捨て
-	//if ( elapse <= 0 )  elapse = 1000;					//	最低１秒
-	//RemainTime[Board.GetTurn()] -= elapse;
-	//ElapseTime[Board.GetTurn()] = current - StartTime;
-	//ElapseTime[Board.GetTurn()^1] = 0;
-	//StartTime = ::timeGetTime();
+	int turn = Board.GetTurn();
+	int elapse = ::timeGetTime() - StartTime;		//	経過時間
+	elapse = max( elapse / 1000 * 1000, 1000 );		//	切り捨て、最低１秒
+
+	RemainTime[turn] -= elapse;
+	ElapseTime[turn] = elapse;
+	ElapseTime[turn^1] = 0;
+	StartTime = ::timeGetTime();
 
 	Board.Move( move );
 	//Log.push_back( Board );
@@ -229,10 +380,17 @@ void CShogi55GUIView::Move( MOVE move )
 		if ( Board.GetTurn() == 0 )
 			LastMoveFrom = move.hand/2-1;
 		else
-			LastMoveFrom = move.hand/2-1 + 31;
+			LastMoveFrom = 36-(move.hand/2-1);
 	else
 		LastMoveFrom = (move.from/7-1) * 5 + (move.from%7-1) + 6;
 	LastMoveTo = (move.to/7-1) * 5 + (move.to%7-1) + 6;
+
+	LOG log;
+	log.remain[0] = RemainTime[0];
+	log.remain[1] = RemainTime[1];
+	log.lastmovefrom = LastMoveFrom;
+	log.lastmoveto = LastMoveTo;
+	Log.push_back( log );
 
 	//	詰みチェック
 	if ( /*Board.IsCheckmate()  ||*/
@@ -256,9 +414,6 @@ void CShogi55GUIView::Move( MOVE move )
 		else
 		{
 			Mode = M_HUMANTURN;
-
-		//	if ( PlayerType != 0 )
-		//		GetPreCPUMove();
 		}
 	}
 
@@ -303,12 +458,6 @@ CShogi55GUIDoc* CShogi55GUIView::GetDocument() const // デバッグ以外のバージョン
 
 void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	//if ( TurnBoard )
-	//{
-	//	point.x = 880 - point.x;
-	//	point.y = 520 - point.y;
-	//}
-
 	int pos = XYToPosition( point.x, point.y );
 
 	if ( pos < 0 )
@@ -347,7 +496,7 @@ void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 		else if ( 31 <= SelectPosition )
 		{
 			move.from = 0;
-			move.hand = (SelectPosition-31) * 2 + 2;
+			move.hand = (36-SelectPosition) * 2 + 2;
 		}
 		else
 		{
@@ -478,6 +627,12 @@ void CShogi55GUIView::OnTimer(UINT_PTR nIDEvent)
 			Move( BestMove );
 		}
 		}
+		break;
+	case TIMER_TIMER:
+		{
+			InvalidateRect( CRect(452,12,452+9*12,12+4*24), FALSE );
+		}
+		break;
 	}
 
 	CView::OnTimer(nIDEvent);
@@ -490,7 +645,7 @@ void CShogi55GUIView::OnUpdateNewgame(CCmdUI *pCmdUI)
 
 void CShogi55GUIView::OnUpdateUndo(CCmdUI *pCmdUI)
 {
-	pCmdUI->Enable( SearchThread == NULL );
+	pCmdUI->Enable( SearchThread == NULL  &&  Board.GetStep() >= 2 );
 }
 
 void CShogi55GUIView::OnUpdateRotate(CCmdUI *pCmdUI)
@@ -510,4 +665,44 @@ void CShogi55GUIView::OnUpdateHint(CCmdUI *pCmdUI)
 void CShogi55GUIView::OnUpdateEdit(CCmdUI *pCmdUI)
 {
 	pCmdUI->Enable( SearchThread == NULL );
+}
+
+int CShogi55GUIView::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (CView::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	SetTimer( TIMER_TIMER, 137, NULL );
+
+	NewGame();
+
+	return 0;
+}
+
+void CShogi55GUIView::OnRotate()
+{
+	TurnBoard = ! TurnBoard;
+
+	InvalidateRect( NULL, FALSE );
+}
+
+void CShogi55GUIView::OnNewgame()
+{
+	CNewGameDialog dialog;
+	if ( dialog.DoModal() == IDOK )
+	{
+		PlayerType[0] = 1 - dialog.Black;
+		PlayerType[1] = 1 - dialog.White;
+		NewGame();
+	}
+}
+
+void CShogi55GUIView::OnUndo()
+{
+	Undo();
+}
+
+void CShogi55GUIView::OnStop()
+{
+	Bot.Halt();
 }
