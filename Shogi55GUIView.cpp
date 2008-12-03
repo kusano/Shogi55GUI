@@ -451,6 +451,11 @@ void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 
 static UINT SearchMove( CShogi55GUIView *view )
 {
+	int weight[CBoard::ELEMNUM] = { 8000, 50000, 50000, 60000, 60000, 0, 35000, 20000, 100000, 100000,
+			20000, 20000, 25000, 25000, 30000, 30000, 50000, 50000, 40000, 40000 };
+	CBoard b;
+	b.SetWeight( weight );
+	
 	view->BestMove = view->Bot.GetNext( &view->Board );
 
 	return 0;

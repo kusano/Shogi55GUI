@@ -194,6 +194,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\engine\evaluator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\engine\learningbonanza.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\engine\main.cpp"
 				>
 			</File>
@@ -261,6 +269,10 @@
 			</File>
 			<File
 				RelativePath=".\engine\config.h"
+				>
+			</File>
+			<File
+				RelativePath=".\engine\evaluator.h"
 				>
 			</File>
 			<File
