@@ -6,6 +6,7 @@
 
 
 #include "engine/minmaxbot.h"
+#include "statedialog.h"
 
 
 
@@ -23,6 +24,14 @@ public:
 	};
 
 private:
+
+	static const int	PW		= 44;		//	駒幅
+	static const int	PH		= 48;		//	駒高
+
+	static const int	TIMER_SEARCH	= 100;	//	探索が終了したかチェック
+	static const int	TIMER_TIMER		= 101;	//	時計を進める
+	static const int	TIMER_STATE		= 102;	//	探索状態表示用
+
 	struct LOG
 	{
 		int		remain[2];
@@ -40,6 +49,8 @@ private:
 	Image		ImageSelect;
 	Image		ImageSearch;
 	Image		ImageTimer;
+
+	CStateDialog	StateDialog;
 
 	int			PlayerType[2];		//	0 CPU	1 人
 

@@ -7,16 +7,11 @@
 #include "Shogi55GUIDoc.h"
 #include "Shogi55GUIView.h"
 #include "NewGameDialog.h"
+#include "PromoteDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
-static const int	PW		= 44;		//	駒幅
-static const int	PH		= 48;		//	駒高
-
-static const int	TIMER_SEARCH	= 100;	//	探索が終了したかチェック
-static const int	TIMER_TIMER		= 101;	//	時計を進める
 
 static UINT SearchMove( CShogi55GUIView *view );
 
@@ -62,6 +57,7 @@ CShogi55GUIView::CShogi55GUIView()
 
 	Board.Initialize();
 	Bot.SetTimeLimit( 10000 );
+	Bot.SetDisplayMode( CMinMaxBot::DM_NORMAL );
 }
 
 CShogi55GUIView::~CShogi55GUIView()
@@ -96,9 +92,6 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 		Graphics g( *pDC );
 		DrawTimer( &g );
 	}
-
-	CRect client;
-	GetClientRect( &client );
 
 	//	バッファ
 	Bitmap backbmp( PW*13, PH*7 );
@@ -520,19 +513,12 @@ void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 			move.promote = true;
 		else if ( narazu  &&  nari )
 		{
-			//CPromoteDialog dialog;
-			//dialog.SetPiece( Board.GetPiece( move.fx, move.fy ) );
-
-			//ModalDialog = true;
-			//INT_PTR nari = dialog.DoModal();
-			//ModalDialog = false;
-
-			//switch ( nari )
-			//{
-			//case 1: break;
-			//case 2: move.ty += 0x80;  break;
-			//default:  cancel = true;  break;
-			//}
+			CPromoteDialog dialog;
+			
+			if ( dialog.DoModal() == IDOK )
+				move.promote = dialog.Promote == 0;
+			else
+				cancel = true;
 		}
 		else
 			move.promote = false;
@@ -629,9 +615,10 @@ void CShogi55GUIView::OnTimer(UINT_PTR nIDEvent)
 		}
 		break;
 	case TIMER_TIMER:
-		{
-			InvalidateRect( CRect(452,12,452+9*12,12+4*24), FALSE );
-		}
+		InvalidateRect( CRect(452,12,452+9*12,12+4*24), FALSE );
+		break;
+	case TIMER_STATE:
+		StateDialog.Update( Bot.GetState() );
 		break;
 	}
 
@@ -672,7 +659,10 @@ int CShogi55GUIView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (CView::OnCreate(lpCreateStruct) == -1)
 		return -1;
 
+	StateDialog.Create( CStateDialog::IDD, this );
+
 	SetTimer( TIMER_TIMER, 137, NULL );
+	SetTimer( TIMER_STATE, 300, NULL );
 
 	NewGame();
 

@@ -13,6 +13,9 @@ using namespace std;
 CMinMaxBot::POSITION CMinMaxBot::Position[CMinMaxBot::POSSIZE];
 CMinMaxBot::POSITION CMinMaxBot::QPosition[CMinMaxBot::QPOSSIZE];
 
+//	’Tõó‘Ô
+STATE CMinMaxBot::State;
+
 
 
 /*
@@ -24,6 +27,43 @@ CMinMaxBot::CMinMaxBot() :
 	TimeLimit( 999000 ),
 	DisplayMode( DM_NONE )
 {
+	//	State::tree.child‰Šú‰»
+	for ( int i=0; i<sizeof State.tree/sizeof State.tree[0]; i++ )
+		for ( int j=0; j<4; j++ )
+			State.tree[i].child[j] = -1;
+		
+	int cur = 1;
+	//	ƒ‹[ƒg
+	for ( int j=0; j<5; j++ )
+		State.tree[0].child[j] = cur++;
+	State.tree[0].childnummax = 5;
+
+	//	[‚³‚P
+	for ( int i=1; i<6; i++ )
+	{
+		for ( int j=0; j<4; j++ )
+			State.tree[i].child[j] = cur++;
+		State.tree[i].childnummax = 4;
+	}
+	//	[‚³‚Q
+	for ( int i=6; i<26; i++ )
+	{
+		for ( int j=0; j<3; j++ )
+			State.tree[i].child[j] = cur++;
+		State.tree[i].childnummax = 3;
+	}
+	//	[‚³‚R
+	for ( int i=26; i<86; i++ )
+	{
+		for ( int j=0; j<2; j++ )
+			State.tree[i].child[j] = cur++;
+		State.tree[i].childnummax = 2;
+	}
+	//	[‚³‚S
+	for ( int i=26; i<86; i++ )
+	{
+		State.tree[i].childnummax = 0;
+	}
 }
 
 
@@ -84,6 +124,17 @@ void CMinMaxBot::Halt()
 
 
 /*
+ *	GetState
+ *		’Tõó‘Ô‚ğæ“¾
+ */
+STATE *CMinMaxBot::GetState() const
+{
+	return &State;
+}
+
+
+
+/*
  *	GetMinMax
  *		MinMax–@‚ÅÅ‘Pè‚ğ’T‚·
  */
@@ -110,7 +161,20 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 
 		for ( int depth=0; depth<=MaxDepth; depth+=1 )
 		{
-			MinMax( &b, 0, depth, -INF, INF );
+#if UPDATE_SEARCH_TREE
+			//	’Tõ–Ø‚Ìƒ‹[ƒg
+			board->GetBoard( &State.tree[0].board );
+			State.tree[0].childnum = 0;
+			State.tree[0].value = 0;
+			State.tree[0].current = true;
+#endif	
+
+			int value = MinMax( &b, 0, depth, -INF, INF, 0 );
+
+#if UPDATE_SEARCH_TREE
+			State.tree[0].value = value;
+			State.tree[0].current = false;
+#endif
 
 			bestmove = BestMove;
 			bestsequence = BestSequence[0];
@@ -189,7 +253,7 @@ void CMinMaxBot::SetValueDelta( int delta )
  *	MinMax
  *		MinMax’Tõ
  */
-int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int beta )
+int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int beta, int nodeid )
 {
 	//	‹Ç–Ê•\
 	HASH hash;
@@ -234,7 +298,7 @@ int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int b
 			board->MoveNull();
 			NullMoveSearch = true;
 
-			int value = -MinMax( board, depth+1, maxdepth-R, -beta-1, -beta );
+			int value = -MinMax( board, depth+1, maxdepth-R, -beta-1, -beta, -1 );
 
 			board->Undo();
 			NullMoveSearch = false;
@@ -370,8 +434,47 @@ int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int b
 				value = -MinMax( board, depth+1, maxdepth+ext, -beta, -best );
 			}
 #else
-			value = -MinMax( board, depth+1, maxdepth+ext, -beta, -best );
+
+			int childnode = -1;	//	q‹Ÿ‚Ìƒm[ƒh
+
+#if UPDATE_SEARCH_TREE
+			if ( nodeid >= 0  &&  State.tree[nodeid].childnummax > 0 )
+			{
+				NODE *node = &State.tree[nodeid];	//	Œ»İ‚Ìƒm[ƒh
+
+				if ( node->childnum < node->childnummax )
+				{
+					childnode = node->child[ node->childnum ];
+					node->childnum++;
+				}
+				else
+				{
+					//	•]‰¿‚ªÅ‚à’á‚¢ƒm[ƒh‚ğŠ„‚è“–‚Ä‚é
+					int minvalue = INF;
+					for ( int i=0; i<node->childnum; i++ )
+						if ( State.tree[node->child[i]].value < minvalue )
+							minvalue = State.tree[node->child[i]].value,
+							childnode = node->child[i];
+				}
+
+				board->GetBoard( &State.tree[childnode].board );
+				State.tree[childnode].childnum = 0;
+				State.tree[childnode].value = 0;
+				State.tree[childnode].current = true;					
+			}
+
 #endif
+			value = -MinMax( board, depth+1, maxdepth+ext, -beta, -best, childnode );
+#endif
+
+#if UPDATE_SEARCH_TREE
+			if ( childnode >= 0 )
+			{
+				State.tree[childnode].value = value;
+				State.tree[childnode].current = false;
+			}
+#endif
+
 			board->Undo();
 
 			if ( value > best )

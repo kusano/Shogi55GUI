@@ -49,6 +49,15 @@ struct LOG
 	int		value;		//	評価値
 };
 
+//	盤面
+struct BOARD
+{
+	char	board[5][5];	//	[x][y]
+	char	hand[6][2];		//	[piece][b/w]
+	int		step;
+	int		turn;
+};
+
 
 
 /*
@@ -79,7 +88,7 @@ private:
 	static HASH		HashBoard[49][32];					//	盤面ハッシュ
 	static HASH		HashHand[14][32];					//	持ち駒ハッシュ
 	static HASH		HashTurn;							//	手番ハッシュ
-
+	
 	char			Board[49];							//	盤面
 	char			Hand[14];							//	持ち駒
 	int				Turn;								//	手番
@@ -132,6 +141,7 @@ public:
 	bool			IsCheckedGyoku( int turn ) const;
 	int				GetValue() const;
 	HASH			GetHash() const;
+	void			GetBoard( BOARD *board ) const;
 
 	void			SetWeight( const int weight[ELEMNUM] );
 	void			GetElement( int element[ELEMNUM] );

@@ -14,6 +14,25 @@ using namespace std;
 
 
 
+//	’Tõ–Ø‚Ìƒm[ƒh
+struct NODE
+{
+	BOARD	board;			//	”Õ–Ê
+	int		child[5];		//	qƒm[ƒh
+	int		childnummax;	//	qƒm[ƒhÅ‘å”
+	int		childnum;	//	qƒm[ƒh‚Ì”
+	int		value;			//	•]‰¿’l
+	bool	current;		//	Œ»İ’Tõ’†‚©
+};
+
+//	’Tõó‘Ô
+struct STATE
+{
+	NODE	tree[1+5+20+60+120];		//	’Tõ–Ø
+};
+
+
+
 class CMinMaxBot
 {
 public:
@@ -46,6 +65,8 @@ private:
 	static POSITION		Position[POSSIZE];			//	‹Ç–Ê•\
 	static POSITION		QPosition[QPOSSIZE];		//	Ã~’Tõ‹Ç–Ê•\
 
+	static STATE		State;						//	’Tõó‘Ô
+
 	MOVE		BestMove;				//	Å‘Pè
 	int			BestScore;				//	Å‘Pè‚Ì•]‰¿’l
 	MOVE		KillerMove[MAXDEPTH];	//	ƒLƒ‰[è
@@ -61,7 +82,7 @@ private:
 	bool		HaltFlag;				//	true‚É‚È‚Á‚½‚ç‹­§I—¹
 
 	MOVE		GetMinMax( const CBoard *board );
-	int			MinMax( CBoard *board, int depth, int maxdepth, int alpha, int beta );
+	int			MinMax( CBoard *board, int depth, int maxdepth, int alpha, int beta, int nodeid );
 	int			Quiescence( CBoard *board, int depth, int maxdepth, int alpha, int beta );
 	int			Evaluate( const CBoard *board );
 
@@ -70,6 +91,7 @@ public:
 	void		Initialize();
 	MOVE		GetNext( const CBoard *board, vector<MOVE> *sequence=NULL, int *score=NULL );
 	void		Halt();
+	STATE *		GetState() const;
 
 	void		SetMaxDepth( int depth );
 	void		SetTimeLimit( int time );

@@ -651,6 +651,26 @@ HASH CBoard::GetHash() const
 
 
 /*
+ *	GetBoard
+ *		Œ»İ‚Ì”Õ–Ê‚ğæ“¾
+ */
+void CBoard::GetBoard( BOARD *board ) const
+{
+	for ( int x=0; x<5; x++ )
+	for ( int y=0; y<5; y++ )
+		board->board[x][y] = Board[(y+1)*7+(x+1)];
+
+	for ( int i=0; i<6; i++ )
+		board->hand[i][0] = Hand[i*2+2],
+		board->hand[i][1] = Hand[i*2+3];
+
+	board->turn = Turn;
+	board->step = Step;
+}
+
+
+
+/*
  *	SetWeight
  *		•]‰¿ŠÖ”‚Ìd‚İ‚ğİ’è
  */

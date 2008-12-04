@@ -226,6 +226,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PromoteDialog.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Shogi55GUI.cpp"
 				>
 			</File>
@@ -239,6 +243,10 @@
 			</File>
 			<File
 				RelativePath=".\engine\simpleevaluator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\StateDialog.cpp"
 				>
 			</File>
 			<File
@@ -300,6 +308,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PromoteDialog.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Resource.h"
 				>
 			</File>
@@ -317,6 +329,10 @@
 			</File>
 			<File
 				RelativePath=".\engine\simpleevaluator.h"
+				>
+			</File>
+			<File
+				RelativePath=".\StateDialog.h"
 				>
 			</File>
 			<File

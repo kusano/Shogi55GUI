@@ -95,6 +95,10 @@ BOOL CShogi55GUIApp::InitInstance()
 	// メイン ウィンドウが初期化されたので、表示と更新を行います。
 	m_pMainWnd->ShowWindow(SW_SHOW);
 	m_pMainWnd->UpdateWindow();
+
+	::AllocConsole();
+	::freopen( "CON", "w", stdout);
+
 	// 接尾辞が存在する場合にのみ DragAcceptFiles を呼び出してください。
 	//  SDI アプリケーションでは、ProcessShellCommand の直後にこの呼び出しが発生しなければなりません。
 	return TRUE;

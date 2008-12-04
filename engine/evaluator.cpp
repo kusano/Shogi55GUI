@@ -50,8 +50,8 @@ void CEvaluator::SetWeight( const CBoard *board, const int weight[ELEMNUM] )
 	for ( int i=0; i<10; i++ )
 	for ( int y=0; y<5; y++ )
 	for ( int x=0; x<5; x++ )
-		ValuePosition[i*2+2][(y+1)*7+(x+1)] = weight[22+i*49+y*5+x],
-		ValuePosition[i*2+3][49-1-(y+1)*7-(x+1)] = -weight[22+i*49+y*5+x];
+		ValuePosition[i*2+2][(y+1)*7+(x+1)] = weight[22+i*25+y*5+x],
+		ValuePosition[i*2+3][49-1-(y+1)*7-(x+1)] = -weight[22+i*25+y*5+x];
 
 	const static int piece[11][22] = {
 		{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },

@@ -21,10 +21,10 @@ static int sign( T a ) { return a > 0 ? 1 : a < 0 ? -1 : 0; }
 
 void LearningBonanza()
 {
-	int weight[ CBoard::ELEMNUM ] = { 0 };
+	int weight[ CBoard::ELEMNUM ] = { 3914, 19354, 22938, 27066, 26730, 0, 6528, 13584, 53824, 60080, 17360, 17360, 15120, 17056, 19120, 19536, 22288, 18928, 24864, 21584 };
 
-	//for ( int i=78; i<CBoard::ELEMNUM; i++ )
-	//	weight[i] = genrand_int32() % 15 - 7;
+	for ( int i=22; i<CBoard::ELEMNUM; i++ )
+		weight[i] = genrand_int32() % 15 - 7;
 
 	Constrain( weight );
 
@@ -32,7 +32,7 @@ void LearningBonanza()
 
 	//	Šû•ˆ
 	FILE *kifu;
-	fopen_s( &kifu, "kifu20081203.txt", "r" );
+	fopen_s( &kifu, "kifu.txt", "r" );
 	if ( kifu == NULL )
 		return;
 
@@ -206,7 +206,7 @@ void LearningBonanza()
 				double T = 1 / ( 1 + exp(-3*(xi-xi0)/3500.0) );
 				double dT = T * ( 1 - T );
 
-				for ( int i=0; i<22/*CBoard::ELEMNUM*/; i++ )
+				for ( int i=0; i<CBoard::ELEMNUM; i++ )
 				if ( e[i] != e0[i] )
 				{
 					dJ[i] += dT * ( e[i] - e0[i] ) * turn;
@@ -220,12 +220,10 @@ void LearningBonanza()
 			//	break;
 		}
 
-		//for ( int i=0;i<78; i++ )
-		//	weight[i] -= 128 * sign( dJ[i] );
-		//for ( int i=0;i<CBoard::ELEMNUM; i++ )
-		for ( int i=0;i<22; i++ )
-			//if ( freq[i] >= n / 100 )
-			weight[i] -= 128 * sign( dJ[i] );
+		for ( int i=0;i<CBoard::ELEMNUM; i++ )
+		//for ( int i=0;i<22; i++ )
+			if ( freq[i] >= n / 50 )
+				weight[i] -= 8 * sign( dJ[i] );
 		Constrain( weight );
 
 		if ( leaf != NULL )
