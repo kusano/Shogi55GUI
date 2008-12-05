@@ -37,4 +37,6 @@ public:
 	afx_msg void OnPaint();
 public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+protected:
+	virtual void OnCancel();
 };

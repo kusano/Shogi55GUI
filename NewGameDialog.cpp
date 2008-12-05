@@ -14,6 +14,7 @@ CNewGameDialog::CNewGameDialog(CWnd* pParent /*=NULL*/)
 	: CDialog(CNewGameDialog::IDD, pParent)
 	, Black(0)
 	, White(1)
+	, TimeLimit(0)
 {
 
 }
@@ -25,8 +26,10 @@ CNewGameDialog::~CNewGameDialog()
 void CNewGameDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
-	DDX_Radio(pDX, IDC_BHUMAN, Black);
-	DDX_Radio(pDX, IDC_WHUMAN, White);
+	DDX_Radio(pDX, IDC_BBOT, Black);
+	DDX_Radio(pDX, IDC_WBOT, White);
+	DDX_Text(pDX, IDC_TIMELIMIT, TimeLimit);
+	DDV_MinMaxInt(pDX, TimeLimit, 1, 10000);
 }
 
 

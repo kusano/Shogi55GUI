@@ -74,8 +74,11 @@ void CBoard::Initialize()
 	memset( Hand, 0, sizeof Hand );
 	Turn = 0;
 	Step = 0;
-
+	memset( RepetitionCount, 0, sizeof RepetitionCount );
+	
 	Update();
+
+	RepetitionCount[Hash%REPETCOUNT]++;
 }
 
 
@@ -169,8 +172,11 @@ bool CBoard::FromString( string s )
 
 	Turn = s[37] == '+' ? 0 : 1;
 	Step = 0;
+	memset( RepetitionCount, 0, sizeof RepetitionCount );
 
 	Update();
+
+	RepetitionCount[Hash%REPETCOUNT]++;
 
 	return true;
 }
@@ -371,6 +377,9 @@ void CBoard::Move( MOVE move )
 
 	Step++;
 
+	//	カウント
+	RepetitionCount[Hash%REPETCOUNT]++;
+
 	//	Log
 	LOG log;
 	log.move = move;
@@ -395,6 +404,9 @@ void CBoard::MoveNull()
 
 	Step++;
 
+	//	カウント
+	RepetitionCount[Hash%REPETCOUNT]++;
+
 	//	Log
 	LOG log;
 	log.move = MOVE::null;
@@ -416,6 +428,9 @@ void CBoard::Undo()
 	LOG log = Log.back();
 	Log.pop_back();
 	MOVE move = log.move;
+
+	//	カウント
+	RepetitionCount[Hash%REPETCOUNT]--;
 
 	//	手番交代
 	Turn ^= 1;
@@ -530,11 +545,21 @@ int CBoard::GetStep() const
  */
 bool CBoard::IsFinished() const
 {
-	return
-		Hand[GYOKU] > 0  ||						//	先手勝ち
-		Hand[GYOKU+1] > 0  ||					//	後手勝ち
-		Turn == 0  &&  IsCheckedGyoku(1)  ||	//	先手勝ち
-		Turn == 1  &&  IsCheckedGyoku(0);		//	後手勝ち
+	//	玉が取られている
+	if ( Hand[GYOKU] > 0  ||  Hand[GYOKU+1] > 0 )
+		return true;
+
+	//	相手の手番で自玉に駒が効いている
+	if ( Turn == 0  &&  IsCheckedGyoku(1)  ||
+		 Turn == 1  &&  IsCheckedGyoku(0) )
+		return true;
+
+	//	千日手
+	if ( RepetitionCount[Hash%REPETCOUNT] >= 4  &&
+		 ! IsCheckedGyoku(0) )			//	先手玉にチェックがかかっている場合、とりあえず放置
+		return true;
+
+	return false;
 }
 
 
@@ -630,8 +655,13 @@ int CBoard::GetValue() const
 	if ( Hand[GYOKU+1] > 0 )
 		return -MATE + Step;
 	if ( Turn == 0  &&  IsCheckedGyoku(1) )
-		return MATE - Step;
+		return MATE - 100 - Step;
 	if ( Turn == 1  &&  IsCheckedGyoku(0) )
+		return -MATE + 100 + Step;
+
+	//	千日手
+	if ( RepetitionCount[Hash%REPETCOUNT] >= 4  &&
+		 ! IsCheckedGyoku(0) )			//	先手玉にチェックがかかっている場合、とりあえず放置
 		return -MATE + Step;
 
 	return Evaluator.GetValue( this );
@@ -651,8 +681,8 @@ HASH CBoard::GetHash() const
 
 
 /*
- *	GetBoard
- *		現在の盤面を取得
+ *	Get/SetBoard
+ *		現在の盤面を取得/設定
  */
 void CBoard::GetBoard( BOARD *board ) const
 {
@@ -666,6 +696,26 @@ void CBoard::GetBoard( BOARD *board ) const
 
 	board->turn = Turn;
 	board->step = Step;
+}
+
+void CBoard::SetBoard( const BOARD *board )
+{
+	for ( int x=0; x<5; x++ )
+	for ( int y=0; y<5; y++ )
+		Board[(y+1)*7+(x+1)] = board->board[x][y];
+
+	for ( int i=0; i<6; i++ )
+		Hand[i*2+2] = board->hand[i][0],
+		Hand[i*2+3] = board->hand[i][1];
+
+	Turn = board->turn;
+	Step = board->step;
+
+	memset( RepetitionCount, 0, sizeof RepetitionCount );
+
+	Update();
+
+	RepetitionCount[Hash%REPETCOUNT]++;
 }
 
 
@@ -890,7 +940,17 @@ bool CBoard::CheckMoveCore( MOVE move, int flag ) const
 			return false;
 	}
 
-	//	TODO 打ち歩詰め
+	//	打ち歩詰め
+	if ( move.hand == FU  &&  Board[move.to-7] == GYOKU+1  ||
+		 move.hand == FU+1  &&  Board[move.to+7] == GYOKU )
+	{
+		((CBoard *)this)->Move( move );
+		bool mate = IsCheckmated( move.hand&1^1 );	//	IsCheckmatedが詰みを見逃す場合有り
+		((CBoard *)this)->Undo();
+
+		if ( mate )
+			return false;
+	}
 
 	return true;
 }
@@ -919,7 +979,7 @@ void CBoard::PutNoValue( int pos, int piece )
 
 	//	歩
 	if ( ( piece & ~1 ) == FU )
-		Fu[piece&1][pos%11] = true;
+		Fu[piece&1][pos%7] = true;
 
 	//	玉
 	if ( ( piece & ~1 ) == GYOKU )
@@ -1009,7 +1069,7 @@ void CBoard::RemoveNoValue( int pos )
 
 	//	歩
 	if ( ( piece & ~1 ) == FU )
-		Fu[piece&1][pos%11] = false;
+		Fu[piece&1][pos%7] = false;
 
 	//	効き
 	int *near = PieceMoveNear[piece];

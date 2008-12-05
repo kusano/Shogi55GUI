@@ -21,4 +21,6 @@ protected:
 public:
 	int Black;
 	int White;
+public:
+	int TimeLimit;
 };

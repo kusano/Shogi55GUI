@@ -16,6 +16,7 @@ IMPLEMENT_DYNCREATE(CMainFrame, CFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -43,11 +44,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // çÏê¨Ç≈Ç´Ç‹ÇπÇÒÇ≈ÇµÇΩÅB
 	}
 
-	HBITMAP toolbar = (HBITMAP)::LoadImage( NULL, _T("toolbar.bmp"), IMAGE_BITMAP,
+	HBITMAP toolbar = (HBITMAP)::LoadImage( NULL, _T("data\\toolbar.bmp"), IMAGE_BITMAP,
 							0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION );
-	HBITMAP disable = (HBITMAP)::LoadImage( NULL, _T("toolbard.bmp"), IMAGE_BITMAP,
+	HBITMAP disable = (HBITMAP)::LoadImage( NULL, _T("data\\toolbard.bmp"), IMAGE_BITMAP,
 							0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION );
-	HBITMAP mask = (HBITMAP)::LoadImage( NULL, _T("toolbarm.bmp"), IMAGE_BITMAP,
+	HBITMAP mask = (HBITMAP)::LoadImage( NULL, _T("data\\toolbarm.bmp"), IMAGE_BITMAP,
 							0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION );
 	if ( toolbar == NULL  ||  mask == NULL )
 	{
@@ -132,3 +133,13 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 
 
+
+void CMainFrame::OnClose()
+{
+	int id = ::AfxMessageBox( _T("èIóπÇµÇ‹Ç∑Ç©ÅH"), MB_ICONQUESTION | MB_YESNO );
+
+	if ( id == IDYES )
+	{
+		CFrameWnd::OnClose();
+	}
+}

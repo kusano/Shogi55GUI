@@ -97,7 +97,8 @@ BOOL CShogi55GUIApp::InitInstance()
 	m_pMainWnd->UpdateWindow();
 
 	::AllocConsole();
-	::freopen( "CON", "w", stdout);
+	FILE *f;
+	::freopen_s( &f, "CON", "w", stdout);
 
 	// 接尾辞が存在する場合にのみ DragAcceptFiles を呼び出してください。
 	//  SDI アプリケーションでは、ProcessShellCommand の直後にこの呼び出しが発生しなければなりません。

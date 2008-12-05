@@ -194,6 +194,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CSADialog.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\engine\evaluator.cpp"
 				>
 			</File>
@@ -223,6 +227,10 @@
 			</File>
 			<File
 				RelativePath=".\NewGameDialog.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PieceSelectDialog.cpp"
 				>
 			</File>
 			<File
@@ -284,6 +292,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CSADialog.h"
+				>
+			</File>
+			<File
 				RelativePath=".\engine\evaluator.h"
 				>
 			</File>
@@ -305,6 +317,10 @@
 			</File>
 			<File
 				RelativePath=".\NewGameDialog.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PieceSelectDialog.h"
 				>
 			</File>
 			<File

@@ -7,7 +7,8 @@
 
 #include "engine/minmaxbot.h"
 #include "statedialog.h"
-
+#include "CSADialog.h"
+#include "PieceSelectDialog.h"
 
 
 
@@ -51,8 +52,11 @@ private:
 	Image		ImageTimer;
 
 	CStateDialog	StateDialog;
+	CCSADialog		CSADialog;
+	CPieceSelectDialog	PieceSelectDialog;
 
 	int			PlayerType[2];		//	0 CPU	1 人
+	int			TimeLimit;
 
 	MODE		Mode;
 	int			SelectPosition;
@@ -118,6 +122,7 @@ public:
 	afx_msg void OnNewgame();
 	afx_msg void OnUndo();
 	afx_msg void OnStop();
+	afx_msg void OnEdit();
 };
 
 #ifndef _DEBUG  // Shogi55GUIView.cpp のデバッグ バージョン

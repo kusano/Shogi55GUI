@@ -12,8 +12,8 @@ IMPLEMENT_DYNAMIC(CStateDialog, CDialog)
 
 CStateDialog::CStateDialog(CWnd* pParent /*=NULL*/)
 	: CDialog(CStateDialog::IDD, pParent)
-	, ImagePiece( _T("piece_s.png") )
-	, ImageBoard( _T("board_s.png") )
+	, ImagePiece( _T("data\\piece_s.png") )
+	, ImageBoard( _T("data\\board_s.png") )
 	, State( NULL )
 {
 
@@ -135,4 +135,11 @@ void CStateDialog::DrawNode( Graphics *g, const NODE *tree, int node, int depth,
 
 	//	自分を描画
 	DrawBoard( g, &tree[node].board, x, y );
+}
+
+void CStateDialog::OnCancel()
+{
+	// TODO: ここに特定なコードを追加するか、もしくは基本クラスを呼び出してください。
+
+	//CDialog::OnCancel();
 }

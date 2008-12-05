@@ -60,7 +60,7 @@ CMinMaxBot::CMinMaxBot() :
 		State.tree[i].childnummax = 2;
 	}
 	//	深さ４
-	for ( int i=26; i<86; i++ )
+	for ( int i=86; i<206; i++ )
 	{
 		State.tree[i].childnummax = 0;
 	}
@@ -91,6 +91,12 @@ MOVE CMinMaxBot::GetNext( const CBoard *board, vector<MOVE> *sequence/*=NULL*/, 
 {
 	StartTime = clock();
 
+	if ( DisplayMode == DM_NORMAL )
+	{
+		board->Display();
+		printf( "TimeLimit %.2fs\n", TimeLimit/1000.0 );
+	}
+
 	if ( sequence != NULL )
 		sequence->clear();
 
@@ -99,7 +105,7 @@ MOVE CMinMaxBot::GetNext( const CBoard *board, vector<MOVE> *sequence/*=NULL*/, 
 	MOVE move = GetMinMax( board );
 	
 	if ( DisplayMode == DM_NORMAL )
-		printf( "評価値　%8d　盤面評価回数　%8d\n", BestScore, EvaluateCount );
+		printf( "BestMove %s\n\n", move.ToString(board).c_str() );
 
 	if ( sequence != NULL )
 		*sequence = BestSequence[0];
@@ -158,6 +164,7 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 	try
 	{
 		double prevtime = 0;	//	前回の探索が終了した時刻
+		double pptime = 0;		//	前回の所要時間
 
 		for ( int depth=0; depth<=MaxDepth; depth+=1 )
 		{
@@ -168,6 +175,9 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 			State.tree[0].value = 0;
 			State.tree[0].current = true;
 #endif	
+
+			if ( DisplayMode == DM_NORMAL )
+				printf( " %2d", depth );
 
 			int value = MinMax( &b, 0, depth, -INF, INF, 0 );
 
@@ -182,12 +192,45 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 			double time = (double)( clock() - StartTime ) / CLOCKS_PER_SEC;
 
 			if ( DisplayMode == DM_NORMAL )
-				printf( " %d", depth );
+			{
+				//	時間
+				//printf( "  %5.2fs %5.2fs %4.1f", time, time-prevtime, (time-prevtime)/pptime );
+				printf( "  %5.2fs %5.2fs", time, time-prevtime );
 
-			//	次の深さに現在の深さ以上の時間がかかると仮定して
+				//	評価値
+				printf( "  %8d(%+8d)", value,
+						value - b.GetValue()*b.GetTurnSign() );
+
+				//	ハッシュ使用率
+				int pos = 0, quies = 0;
+				for ( int i=0; i<10000; i++ )
+				{
+					if ( Position[i].hash != 0 )
+						pos++;
+					if ( QPosition[i].hash != 0 )
+						quies++;
+				}
+				printf( "  %5.2f%% %5.2f%%", pos/10000.0*100, quies/10000.0*100 );
+
+				//	探索局面数
+				printf( "  %10d %4.1fknps", EvaluateCount, (double)EvaluateCount/time/1000 );
+
+				printf( "\n" );
+				printf( "[%d]", bestsequence.size() );
+
+				for ( vector<MOVE>::const_iterator m=bestsequence.begin(); m!=bestsequence.end(); m++ )
+					printf( "%s", m->ToString(&b).c_str() ),
+					b.Move( *m );
+				for ( vector<MOVE>::const_iterator m=bestsequence.begin(); m!=bestsequence.end(); m++ )
+					b.Undo();
+				printf( "\n" );
+			}
+
+			//	次の深さに現在の深さの４倍以上の時間がかかると仮定して
 			//	制限時間をオーバーしそうなら諦める
-			if ( time + ( time - prevtime ) > (double)TimeLimit/1000 )
+			if ( time + 4*( time - prevtime ) > (double)TimeLimit/1000 )
 				break;
+			pptime = time - prevtime;
 			prevtime = time;
 		}
 	}
@@ -282,10 +325,19 @@ int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int b
 	MOVE bestmove = MOVE::null;
 	BestSequence[depth].clear();
 
+	bool finished = board->IsFinished();
+	bool checkmated = ! finished ? board->IsCheckmated(board->GetTurn()) : false;
+
 	//	末端
-	if ( depth >= maxdepth ||  board->IsFinished() )
+	if ( depth >= maxdepth  ||
+		 finished  ||  checkmated )
 	{
-		best = Quiescence( board, depth, maxdepth, alpha, beta );
+		if ( finished )
+			best = Evaluate(board) * board->GetTurnSign();
+		else if ( checkmated )
+			best = -MATE + 1000 + board->GetStep();
+		else
+			best = Quiescence( board, depth, maxdepth, alpha, beta );
 	}
 	else
 	{

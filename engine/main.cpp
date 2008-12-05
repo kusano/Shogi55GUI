@@ -11,6 +11,7 @@
 static void		LoadCSA();
 static void		TestBot();
 static void		GenerateKifu();
+static void		LoadKifu();
 void			LearningBonanza();
 
 
@@ -24,9 +25,10 @@ int main()
 #endif
 
 	//LoadCSA();
-	//TestBot();
+	TestBot();
 	//GenerateKifu();
-	LearningBonanza();
+	//LearningBonanza();
+	//LoadKifu();
 	return 0;
 
 	CBoard b;
@@ -101,8 +103,18 @@ void TestBot()
 	CBoard board;
 	board.Initialize();
 
+	FILE *f;
+	int weight[CBoard::ELEMNUM];
+	fopen_s( &f, "weight.txt", "r" );
+	for ( int i=0; i<CBoard::ELEMNUM; i++ )
+		if ( fscanf_s( f, "%d", &weight[i] ) != 1 )
+			throw "Failed to load weight.txt";
+	fclose( f );
+	board.SetWeight( weight );
+
 	CMinMaxBot bot;
-	bot.SetTimeLimit( 10000 );
+	//bot.SetTimeLimit( 10000 );
+	bot.SetMaxDepth( 7 );
 	bot.SetDisplayMode( CMinMaxBot::DM_NORMAL );
 
 	for ( int i=0; i<sizeof state/sizeof state[0]; i++ )
@@ -125,6 +137,8 @@ void TestBot()
 
 		printf( "\n\n" );
 	}
+
+	printf( "%f [s]\n", (double)clock() / CLOCKS_PER_SEC );
 }
 
 
@@ -178,5 +192,51 @@ void GenerateKifu()
 
 		board.Move( m );
 		log.push_back( board.GetHash() );
+	}
+}
+
+
+
+void LoadKifu()
+{
+	//	Šû•ˆ
+	FILE *kifu;
+	fopen_s( &kifu, "kifu.txt", "r" );
+	if ( kifu == NULL )
+		return;
+
+	vector<int> step;
+
+	int ps = 0;
+
+	char buf[1024];
+
+	while ( fgets( buf, sizeof buf, kifu ) != 0 )
+	{
+		char			sboard[1024];
+		unsigned int	smove;
+		int				s;
+
+		if ( sscanf_s( buf, "%s %x %d", sboard, sizeof sboard, &smove, &s ) != 3 )
+			continue;
+
+		if ( s < ps )
+			step.push_back( ps );
+		ps = s;
+	}
+
+	printf( "kifu num = %d\n", step.size() );
+
+	for ( int i=0; i<200; i++ )
+	{
+		int r = 0;
+		int n = 0;
+
+		for ( int j=0; j<(int)step.size(); j++ )
+			if ( step[j] > i )
+				r += step[j] - i,
+				n++;
+
+		printf( "%3d %f\n", i, (double)r/n );
 	}
 }

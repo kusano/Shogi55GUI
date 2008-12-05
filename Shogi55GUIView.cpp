@@ -33,29 +33,55 @@ BEGIN_MESSAGE_MAP(CShogi55GUIView, CView)
 	ON_COMMAND(ID_NEWGAME, &CShogi55GUIView::OnNewgame)
 	ON_COMMAND(ID_UNDO, &CShogi55GUIView::OnUndo)
 	ON_COMMAND(ID_STOP, &CShogi55GUIView::OnStop)
+	ON_COMMAND(ID_EDIT, &CShogi55GUIView::OnEdit)
 END_MESSAGE_MAP()
 
 // CShogi55GUIView コンストラクション/デストラクション
 
 CShogi55GUIView::CShogi55GUIView()
-	: ImageBackground( _T("background.png") )
-	, ImageBoard( _T("board.png") )
-	, ImagePiece( _T("piece.png") )
-	, ImageSelect( _T("select.png") )
-	, ImageSearch( _T("search.png") )
-	, ImageTimer( _T("timer.png") )
+	: ImageBackground( _T("data\\background.png") )
+	, ImageBoard( _T("data\\board.png") )
+	, ImagePiece( _T("data\\piece.png") )
+	, ImageSelect( _T("data\\select.png") )
+	, ImageSearch( _T("data\\search.png") )
+	, ImageTimer( _T("data\\timer.png") )
 	, Mode( M_HUMANTURN )
 	, SelectPosition( -1 )
 	, TurnBoard( false )
 	, SearchThread( NULL )
 {
 	PlayerType[0] = 1;
-	PlayerType[1] = 1;
+	PlayerType[1] = 0;
+
+	TimeLimit = 20 * 60 * 1000;
 
 	//	タイマーの精度を上げる
 	::timeBeginPeriod( 1 );
 
+	//	盤面・評価関数の初期化
 	Board.Initialize();
+
+	FILE *f;
+	bool failed = false;
+	int weight[CBoard::ELEMNUM];
+
+	fopen_s( &f, "data\\weight.txt", "r" );
+
+	if ( f != NULL )
+	{
+		for ( int i=0; i<CBoard::ELEMNUM; i++ )
+			if ( fscanf_s( f, "%d", &weight[i] ) != 1 )
+				failed = true;
+		fclose( f );
+	}
+	else
+		failed = true;
+
+	if ( ! failed )
+		Board.SetWeight( weight );
+	else
+		::AfxMessageBox( _T("評価関数の読み込みに失敗しました") );
+	
 	Bot.SetTimeLimit( 10000 );
 	Bot.SetDisplayMode( CMinMaxBot::DM_NORMAL );
 }
@@ -184,6 +210,9 @@ void CShogi55GUIView::DrawTimer( Graphics *g )
 
 	for ( int i=0; i<4; i++ )
 	{
+		if ( time[i] < 0 )
+			time[i] = 0;
+
 		int dig[9];
 
 		dig[0] = time[i] / 60 / 1000 / 10 % 10;
@@ -275,21 +304,30 @@ int CShogi55GUIView::XYToPosition( int x, int y )
  */
 void CShogi55GUIView::NewGame()
 {
-	const int time = 1200000;	//	20分
-
 	Board.Initialize();
 	Log.clear();
-	
+
+	CSADialog.Clear();
+	CSADialog.Output( _T("V1-MSK") );
+	CSADialog.Output( PlayerType[0]==0 ? _T("N+Tohske") : _T("N+????") );
+	CSADialog.Output( PlayerType[1]==0 ? _T("N-Tohske") : _T("N-????") );
+	int minute = TimeLimit / 60 / 1000;
+	CString temp;
+	temp.Format( _T("$TIME_LIMIT:%02d:%02d+00"), minute/60, minute%60 );
+	CSADialog.Output( temp );
+	CSADialog.Output( _T("PI") );
+	CSADialog.Output( _T("+") );
+
 	LastMoveFrom = -1;
 	LastMoveTo = -1;
 	SelectPosition = -1;
 
-	RemainTime[0] = RemainTime[1] = time;	//	20分
+	RemainTime[0] = RemainTime[1] = TimeLimit;	//	20分
 	ElapseTime[0] = ElapseTime[1] = 0;
 	StartTime = ::timeGetTime();
 
 	LOG log;
-	log.remain[0] = log.remain[1] = time;
+	log.remain[0] = log.remain[1] = TimeLimit;
 	log.lastmovefrom = -1;
 	log.lastmoveto = -1;
 	Log.push_back( log );
@@ -333,6 +371,8 @@ void CShogi55GUIView::Undo()
 		StartTime = ::timeGetTime();
 		SelectPosition = -1;
 
+		CSADialog.Output( _T("%MATTA") );
+
 		InvalidateRect( NULL, FALSE );
 	}
 }
@@ -350,24 +390,23 @@ void CShogi55GUIView::Move( MOVE move )
 	ElapseTime[turn^1] = 0;
 	StartTime = ::timeGetTime();
 
+	LPCTSTR piece[] = { _T(""), _T("FU"), _T("GI"), _T("KA"), _T("HI"), _T("KI"), _T("OU"),
+					   _T("TO"), _T("NG"), _T("UM"), _T("RY") };
 	Board.Move( move );
-	//Log.push_back( Board );
-	
-	//LPCTSTR piece[] = { _T(""), _T("FU"), _T("GI"), _T("KA"), _T("HI"), _T("KI"), _T("OU"),
-	//				   _T("TO"), _T("NG"), _T("UM"), _T("RY") };
-	//CString m;
-	//m.Format( _T("%c%d%d%d%d%s"),
-	//	Board.GetTurn()==0 ? '-' : '+',
-	//	move->IsPut() ? 0 : move->gfx()+1,
-	//	move->IsPut() ? 0 : move->gfy()+1,
-	//	move->gtx()+1,
-	//	move->gty()+1,
-	//	piece[ Board.GetPiece(move->gtx(),move->gty()) / 2 ] );
-	//CSALogDialog.Output( m );
 
-	//CString t;
-	//t.Format( _T("T%d"), elapse / 1000 );
-	//CSALogDialog.Output( t );
+	CString m;
+	m.Format( _T("%c%d%d%d%d%s"),
+		Board.GetTurn()==0 ? '-' : '+',		//	指した後なので
+		move.hand == 0 ? move.from % 7 : 0,
+		move.hand == 0 ? move.from / 7 : 0,
+		move.to % 7,
+		move.to / 7,
+		piece[ Board.GetPiece(move.to) / 2 ] );
+	CSADialog.Output( m );
+
+	CString t;
+	t.Format( _T("T%d"), elapse / 1000 );
+	CSADialog.Output( t );
 
 	if ( move.hand > 0 )
 		if ( Board.GetTurn() == 0 )
@@ -386,16 +425,16 @@ void CShogi55GUIView::Move( MOVE move )
 	Log.push_back( log );
 
 	//	詰みチェック
-	if ( /*Board.IsCheckmate()  ||*/
-		 Board.IsFinished() )
+	if ( Board.IsFinished()  ||
+		 Board.IsCheckmated( 0 )  ||  Board.IsCheckmated( 1 ) )
 	{
 		Mode = M_HUMANTURN;
 		InvalidateRect( NULL, FALSE );
 
-		if ( Board.GetTurn() == 0 )
-			::AfxMessageBox( _T("後手の勝ちです") );
-		else
+		if ( Board.GetValue() > 0 )
 			::AfxMessageBox( _T("先手の勝ちです") );
+		else
+			::AfxMessageBox( _T("後手の勝ちです") );
 	}
 	else
 	{
@@ -540,39 +579,39 @@ void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 
 	case M_EDIT:
 		{
-		//int piece = PieceSelectDialog.GetPiece();
-		//int motigoma[14];
-		//int board[5][5];
-		//Board.GetBoard( board, motigoma );
+		int piece = PieceSelectDialog.Piece;
+		BOARD board;
+		Board.GetBoard( &board );
 
-		//Board.Initialize();
+		Board.Initialize();
 
-		//if ( pos <= 5 )
-		//{
-		//	if ( piece == 0 )
-		//		if ( motigoma[pos*2+3] > 0 )
-		//			motigoma[pos*2+3]--;
-		//	if ( 3 <= piece  &&  piece <= 11  &&  piece % 2 == 1 )
-		//		motigoma[piece]++;
-		//}
-		//
-		//if ( 31 <= pos )
-		//{
-		//	if ( piece == 0 )
-		//		if ( motigoma[(pos-31)*2+2] > 0 )
-		//			motigoma[(pos-31)*2+2]--;
-		//	if ( 2 <= piece  &&  piece <= 10  &&  piece % 2 == 0 )
-		//		motigoma[piece]++;
-		//}
+		if ( pos <= 5 )
+		{
+			if ( piece == 0 )
+				if ( board.hand[pos][1] > 0 )
+					board.hand[pos][1]--;
+			if ( 2 <= piece  &&  piece < 12  &&  piece % 2 == 1 )
+				if ( board.hand[piece/2-1][1] < 2 )
+					board.hand[piece/2-1][1]++;
+		}
+		
+		if ( 31 <= pos )
+		{
+			if ( piece == 0 )
+				if ( board.hand[36-pos][0] > 0 )
+					board.hand[36-pos][0]--;
+			if ( 2 <= piece  &&  piece < 12  &&  piece % 2 == 0 )
+				if ( board.hand[piece/2-1][0] < 2 )
+					board.hand[piece/2-1][0]++;
+		}
 
-		//if ( 6 <= pos  &&  pos <= 30 )
-		//	board[(pos-6)%5][(pos-6)/5] = piece;
+		if ( 6 <= pos  &&  pos <= 30 )
+			board.board[(pos-6)%5][(pos-6)/5] = piece;
 
-		//Board.SetBoard( board, motigoma );
+		Board.SetBoard( &board );
 
 		break;
 		}
-
 	case M_BOTTUNRN:
 		break;
 	}
@@ -586,11 +625,22 @@ void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 
 static UINT SearchMove( CShogi55GUIView *view )
 {
-	int weight[CBoard::ELEMNUM] = { 8000, 50000, 50000, 60000, 60000, 0, 35000, 20000, 100000, 100000,
-			20000, 20000, 25000, 25000, 30000, 30000, 50000, 50000, 40000, 40000 };
-	CBoard b;
-	b.SetWeight( weight );
+	//	残手数数の予測
+	//	現在0手なら残り40手　30手なら16手　この間線形
+	//	30手目以降は16手と想定
+	int step = view->Board.GetStep();
+	double remain;
+	if ( step <= 30 )
+		remain = 40 - step*(40-16)/30.0;
+	else
+		remain = 16;
+
+	//	残り時間の設定
+	int limit = (int)( view->RemainTime[view->Board.GetTurn()] / ( remain / 2 ) );
 	
+	view->Bot.SetTimeLimit( limit );
+
+	//	探索実行
 	view->BestMove = view->Bot.GetNext( &view->Board );
 
 	return 0;
@@ -661,8 +711,15 @@ int CShogi55GUIView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	StateDialog.Create( CStateDialog::IDD, this );
 
+	CSADialog.Create( CCSADialog::IDD, this );
+	CRect rect;
+	CSADialog.GetWindowRect( &rect );
+	CSADialog.MoveWindow( 16, 240, rect.Width(), rect.Height() );
+
+	PieceSelectDialog.Create( CPieceSelectDialog::IDD, this );
+
 	SetTimer( TIMER_TIMER, 137, NULL );
-	SetTimer( TIMER_STATE, 300, NULL );
+	SetTimer( TIMER_STATE, 30, NULL );
 
 	NewGame();
 
@@ -679,10 +736,16 @@ void CShogi55GUIView::OnRotate()
 void CShogi55GUIView::OnNewgame()
 {
 	CNewGameDialog dialog;
+
+	dialog.Black = PlayerType[0];
+	dialog.White = PlayerType[1];
+	dialog.TimeLimit = TimeLimit / 1000 / 60;
+
 	if ( dialog.DoModal() == IDOK )
 	{
-		PlayerType[0] = 1 - dialog.Black;
-		PlayerType[1] = 1 - dialog.White;
+		PlayerType[0] = dialog.Black;
+		PlayerType[1] = dialog.White;
+		TimeLimit = dialog.TimeLimit * 60 * 1000;
 		NewGame();
 	}
 }
@@ -695,4 +758,18 @@ void CShogi55GUIView::OnUndo()
 void CShogi55GUIView::OnStop()
 {
 	Bot.Halt();
+}
+
+void CShogi55GUIView::OnEdit()
+{
+	if ( Mode != M_EDIT )
+	{
+		PieceSelectDialog.ShowWindow( SW_SHOW );
+		Mode = M_EDIT;
+	}
+	else
+	{
+		PieceSelectDialog.ShowWindow( SW_HIDE );
+		Mode = M_HUMANTURN;
+	}
 }

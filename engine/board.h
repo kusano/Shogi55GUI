@@ -71,6 +71,7 @@ class CBoard
 public:
 	static const int MAXMOVE	= 1024;					//	最大着手可能手数（593だけどちょっと余裕を持って）
 	static const int ELEMNUM	= CEvaluator::ELEMNUM;	//	評価関数の要素数
+	static const int REPETCOUNT	= 0x10000;				//	千日手対策用テーブルサイズ
 
 	enum
 	{
@@ -101,6 +102,7 @@ private:
 	bool			Fu[7][2];							//	歩の有無
 	int				GyokuPosition[2];					//	玉の位置
 	int				Effect[49][2];						//	効き　下位から -8n -7n -6n -1n +1n +6n +7n +8n -8 -7 -6 -1 +1 +6 +7 +8 の方向からの効きがある
+	char			RepetitionCount[REPETCOUNT];		//	出現回数を数えておく
 
 	void			GlobalInitialize();
 	void			Update();
@@ -142,6 +144,7 @@ public:
 	int				GetValue() const;
 	HASH			GetHash() const;
 	void			GetBoard( BOARD *board ) const;
+	void			SetBoard( const BOARD *board );
 
 	void			SetWeight( const int weight[ELEMNUM] );
 	void			GetElement( int element[ELEMNUM] );
