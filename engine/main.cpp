@@ -24,9 +24,9 @@ int main()
 #endif
 
 	//LoadCSA();
-	TestBot();
+	//TestBot();
 	//GenerateKifu();
-	//LearningBonanza();
+	LearningBonanza();
 	return 0;
 
 	CBoard b;

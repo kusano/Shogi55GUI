@@ -81,7 +81,7 @@ void CStateDialog::DrawBoard( Graphics *g, const BOARD *board, int x, int y )
 
 	for ( int px=0; px<5; px++ )
 	for ( int py=0; py<5; py++ )
-		g->DrawImage( &ImagePiece, x+(px+1)*PW, y+(4-py)*PH,
+		g->DrawImage( &ImagePiece, x+(4-px+1)*PW, y+py*PH,
 					  board->board[px][py]*PW, 0, PW, PH, UnitPixel );
 
 	for ( int h=0; h<5; h++ )
@@ -128,7 +128,7 @@ void CStateDialog::DrawNode( Graphics *g, const NODE *tree, int node, int depth,
 
 		if ( depth == 2   &&  i % 2 == 1 )
 			cx += dx[depth]*2,
-			cy += dy[depth] / 2;
+			cy -= dy[depth] / 2;
 
 		DrawNode( g, tree, tree[node].child[i], depth+1, cx, cy, x, y );
 	}

@@ -203,13 +203,15 @@ void LearningBonanza()
 					 turn < 0  &&  xi <= xi0 )
 					J++;
 
-				double T = 1 / ( 1 + exp(-3*(xi-xi0)/3500.0) );
+				double T = 1 / ( 1 + exp(-3*(xi-xi0)/8000.0) );
 				double dT = T * ( 1 - T );
 
 				for ( int i=0; i<CBoard::ELEMNUM; i++ )
 				if ( e[i] != e0[i] )
 				{
 					dJ[i] += dT * ( e[i] - e0[i] ) * turn;
+					if ( i >= 22 )
+						dJ[i] += dT * abs( e[i] - e0[i] ) * weight[i] / 2000.0;
 					freq[i]++;
 				}
 			}
