@@ -94,6 +94,7 @@ MOVE CMinMaxBot::GetNext( const CBoard *board, vector<MOVE> *sequence/*=NULL*/, 
 	if ( DisplayMode == DM_NORMAL )
 	{
 		board->Display();
+		printf( "Step %d  Value %d\n", board->GetStep(), board->GetValue() );
 		printf( "TimeLimit %.2fs\n", TimeLimit/1000.0 );
 	}
 
@@ -135,6 +136,15 @@ void CMinMaxBot::Halt()
  */
 STATE *CMinMaxBot::GetState() const
 {
+	for ( int i=0; i<STATE::HASHNUM; i++ )
+	{
+		State.hash[i].used = Position[i].hash != 0;
+		State.hash[i].current = Position[i].maxdepth >= CurrentDepth;
+		State.hash[i].alpha = Position[i].bound <= 0;
+		State.hash[i].beta = Position[i].bound >= 0;
+		State.hash[i].depth = Position[i].depth;
+	}
+
 	return &State;
 }
 
@@ -168,12 +178,18 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 
 		for ( int depth=0; depth<=MaxDepth; depth+=1 )
 		{
+			CurrentDepth = depth;
+
 #if UPDATE_SEARCH_TREE
 			//	’Tõ–Ø‚Ìƒ‹[ƒg
 			board->GetBoard( &State.tree[0].board );
 			State.tree[0].childnum = 0;
 			State.tree[0].value = 0;
 			State.tree[0].current = true;
+			State.tree[0].x = 0;
+			State.tree[0].y = 0;
+			State.tree[0].characternum
+				= b.GetCharacter( 256, State.tree[0].character, NODE::MAXCHARACTER );
 #endif	
 
 			if ( DisplayMode == DM_NORMAL )
@@ -511,8 +527,12 @@ int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int b
 
 				board->GetBoard( &State.tree[childnode].board );
 				State.tree[childnode].childnum = 0;
-				State.tree[childnode].value = 0;
-				State.tree[childnode].current = true;					
+				State.tree[childnode].value = -INF;
+				State.tree[childnode].current = true;
+				State.tree[childnode].x = node->x;
+				State.tree[childnode].y = node->y;
+				State.tree[childnode].characternum
+					= board->GetCharacter( 256, State.tree[childnode].character, NODE::MAXCHARACTER );
 			}
 
 #endif
@@ -522,7 +542,10 @@ int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int b
 #if UPDATE_SEARCH_TREE
 			if ( childnode >= 0 )
 			{
-				State.tree[childnode].value = value;
+				if ( value > best )
+					State.tree[childnode].value = value;
+				else
+					State.tree[childnode].value = -INF/2;
 				State.tree[childnode].current = false;
 			}
 #endif
@@ -755,5 +778,5 @@ int CMinMaxBot::Evaluate( const CBoard *board )
 			throw 0;
 	}
 
-	return board->GetValue() + ((unsigned int)board->GetHash()^ValueDelta)%1024 - 512;
+	return board->GetValue();// + ((unsigned int)board->GetHash()^ValueDelta)%8 - 4;
 }

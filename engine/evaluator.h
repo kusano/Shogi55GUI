@@ -7,6 +7,15 @@ class CBoard;
 
 
 
+//	•]‰¿ŠÖ”‚Ì—v‘f
+struct CHARACTER
+{
+	char	x1, y1, x2, y2;
+	int		value;
+};
+
+
+
 class CEvaluator
 {
 public:
@@ -38,4 +47,5 @@ public:
 	int				GetValue( const CBoard *board ) const;
 	void			SetValue( int value );
 	void			GetElement( const CBoard *board, int element[ELEMNUM] ) const;
+	int				GetCharacter( const CBoard *board, int threshold, CHARACTER character[], int maxnumber ) const;
 };

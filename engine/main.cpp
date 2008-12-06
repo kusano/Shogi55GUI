@@ -127,12 +127,12 @@ void TestBot()
 		vector<MOVE> move;
 		bot.GetNext( &board, &move );
 
-		for ( int i=0; i<move.size(); i++ )
+		for ( int i=0; i<(int)move.size(); i++ )
 		{
 			printf( " %s", move[i].ToString( &board ).c_str() );
 			board.Move( move[i] );
 		}
-		for ( int i=0; i<move.size(); i++ )
+		for ( int i=0; i<(int)move.size(); i++ )
 			board.Undo();
 
 		printf( "\n\n" );

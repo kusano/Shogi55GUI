@@ -39,12 +39,13 @@ END_MESSAGE_MAP()
 // CShogi55GUIView コンストラクション/デストラクション
 
 CShogi55GUIView::CShogi55GUIView()
-	: ImageBackground( _T("data\\background.png") )
-	, ImageBoard( _T("data\\board.png") )
-	, ImagePiece( _T("data\\piece.png") )
-	, ImageSelect( _T("data\\select.png") )
-	, ImageSearch( _T("data\\search.png") )
-	, ImageTimer( _T("data\\timer.png") )
+	: ImageBackground( L"data\\backgroundc.png" )
+	//: ImageBackground( L"data\\background.png" )
+	, ImageBoard( L"data\\board.png" )
+	, ImagePiece( L"data\\piece.png" )
+	, ImageSelect( L"data\\select.png" )
+	, ImageSearch( L"data\\search.png" )
+	, ImageTimer( L"data\\timer.png" )
 	, Mode( M_HUMANTURN )
 	, SelectPosition( -1 )
 	, TurnBoard( false )
@@ -125,7 +126,7 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 
 	//	背景
 	g.DrawImage( &ImageBackground, 0, 0 );
-    g.DrawImage( &ImageBoard, 0, 0 );
+    //g.DrawImage( &ImageBoard, 0, 0 );
 
 	//	タイマー
 	DrawTimer( &g );
@@ -718,8 +719,8 @@ int CShogi55GUIView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	PieceSelectDialog.Create( CPieceSelectDialog::IDD, this );
 
-	SetTimer( TIMER_TIMER, 137, NULL );
-	SetTimer( TIMER_STATE, 30, NULL );
+	SetTimer( TIMER_TIMER, 100, NULL );
+	SetTimer( TIMER_STATE, 100, NULL );
 
 	NewGame();
 

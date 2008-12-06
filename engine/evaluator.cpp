@@ -310,6 +310,47 @@ void CEvaluator::GetElement( const CBoard *board, int element[ELEMNUM] ) const
 
 
 /*
+ *	GetCharacter
+ *		â‘Î’l‚ªthresholdˆÈã‚Ì•]‰¿—v‘f‚ğÅ‘åmaxnumberŒÂ•Ô‚·
+ */
+int CEvaluator::GetCharacter( const CBoard *board, int threshold, CHARACTER character[], int maxnumber ) const
+{
+	int num = 0;
+	if ( maxnumber <= 0 )
+		return 0;
+
+	#define ADD(p1,p2,v)						\
+		do										\
+		{										\
+			if ( abs(v) >= threshold )			\
+			{									\
+				character[num].x1 = (p1)%7-1,	\
+				character[num].y1 = (p1)/7-1,	\
+				character[num].x2 = (p2)%7-1,	\
+				character[num].y2 = (p2)/7-1,	\
+				character[num].value = (v);		\
+												\
+				if ( ++num >= maxnumber )		\
+					return num;					\
+			}									\
+		}										\
+		while ( false )
+
+	for ( int i=0; i<49; i++ )
+		ADD( i, i, ValuePosition[ board->Board[i] ][i] );
+
+	for ( int f=0; f<49; f++ )  if ( board->Board[f] >= FU )
+	for ( int *t=Near[f]; *t>=0; t++ )  if ( *t >= f  &&  board->Board[*t] >= FU )
+		ADD( f, *t, GetRelativeValue( board, f, *t ) );
+
+	#undef ADD
+
+	return num;
+}
+
+
+
+/*
  *	Initialize
  *		‰Šú‰»
  */

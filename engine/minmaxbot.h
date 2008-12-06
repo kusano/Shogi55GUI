@@ -17,18 +17,35 @@ using namespace std;
 //	探索木のノード
 struct NODE
 {
+	const static int	MAXCHARACTER	= 32;
+
 	BOARD	board;			//	盤面
 	int		child[5];		//	子ノード
 	int		childnummax;	//	子ノード最大数
-	int		childnum;	//	子ノードの数
+	int		childnum;		//	子ノードの数
 	int		value;			//	評価値
 	bool	current;		//	現在探索中か
+	int		x, y;			//	位置
+	bool	draw;			//	このノードを描画する
+	CHARACTER character[MAXCHARACTER];	//	評価の高い評価要素
+	int		characternum;	//	↑の個数
 };
 
 //	探索状態
 struct STATE
 {
-	NODE	tree[1+5+20+60+120];		//	探索木
+	const static int	HASHNUM			= 1024;
+
+	struct HASH
+	{
+		bool	used;		//	使用されている
+		bool	current;	//	今回のハッシュ
+		bool	alpha, beta;//	上限・下限
+		int		depth;		//	深さ
+	};
+
+	NODE	tree[1+5+20+60+120];	//	探索木
+	HASH	hash[HASHNUM];			//	ハッシュの状況
 };
 
 
@@ -72,6 +89,7 @@ private:
 	MOVE		KillerMove[MAXDEPTH];	//	キラー手
 	vector<MOVE>BestSequence[MAXDEPTH];	//	深さごとの読み筋
 	bool		NullMoveSearch;			//	NullMove探索中
+	int			CurrentDepth;			//	現在の探索深さ
 
 	int			MaxDepth;				//	最大深さ
 	int			TimeLimit;				//	制限時間 [ms]　0で無効

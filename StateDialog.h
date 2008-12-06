@@ -13,11 +13,14 @@ class CStateDialog : public CDialog
 
 	STATE *		State;
 
+	Image		ImageBackground;
 	Image		ImagePiece;
 	Image		ImageBoard;
+	Image		ImageHash;
 
-	void		DrawNode( Graphics *g, const NODE *tree, int node, int depth, int x, int y, int px, int py );
-	void		DrawBoard( Graphics *g, const BOARD *board, int x, int y );
+	void		DrawNode( Graphics *g, const NODE *tree, int node );
+	void		DrawBoard( Graphics *g, const NODE *node );
+	void		MoveNode( NODE *tree, int node, int depth, int x, int y );
 
 public:
 	CStateDialog(CWnd* pParent = NULL);   // 標準コンストラクタ

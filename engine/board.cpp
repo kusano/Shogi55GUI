@@ -743,6 +743,17 @@ void CBoard::GetElement( int element[ELEMNUM] )
 
 
 /*
+ *	GetCharacter
+ *		â‘Î’l‚ªthresholdˆÈã‚Ì•]‰¿—v‘f‚ğÅ‘åmaxnumberŒÂ•Ô‚·
+ */
+int CBoard::GetCharacter( int threshold, CHARACTER character[], int maxnumber ) const
+{
+	return Evaluator.GetCharacter( this, threshold, character, maxnumber );
+}
+
+
+
+/*
  *	Display
  *		•\¦
  */

@@ -196,13 +196,13 @@ BEGIN
     PUSHBUTTON      "キャンセル",IDCANCEL,78,24,50,14
 END
 
-IDD_STATE DIALOGEX 0, 0, 186, 90
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION
+IDD_STATE DIALOGEX 0, 0, 187, 90
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_THICKFRAME
 CAPTION "探索状態"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,129,7,50,14,NOT WS_VISIBLE
-    PUSHBUTTON      "キャンセル",IDCANCEL,129,24,50,14,NOT WS_VISIBLE
+    DEFPUSHBUTTON   "OK",IDOK,130,7,50,14,NOT WS_VISIBLE
+    PUSHBUTTON      "キャンセル",IDCANCEL,130,24,50,14,NOT WS_VISIBLE
 END
 
 IDD_CSA DIALOGEX 0, 0, 73, 46
@@ -270,13 +270,13 @@ BEGIN
     BEGIN
         BLOCK "041103a4"
         BEGIN
-            VALUE "CompanyName", "TODO: <会社名>"
-            VALUE "FileDescription", "TODO: <ファイルの説明>"
+            VALUE "CompanyName", "篠原研"
+            VALUE "FileDescription", "５五将棋ソフト"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Shogi55GUI.exe"
-            VALUE "LegalCopyright", "TODO: (C) <会社名>.  All rights reserved."
+            VALUE "LegalCopyright", "(C) Kusano Kazuhiko.  All rights reserved."
             VALUE "OriginalFilename", "Shogi55GUI.exe"
-            VALUE "ProductName", "TODO: <製品名>"
+            VALUE "ProductName", "Tohske"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
@@ -322,7 +322,7 @@ BEGIN
     IDD_STATE, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 179
+        RIGHTMARGIN, 180
         TOPMARGIN, 7
         BOTTOMMARGIN, 83
     END

@@ -148,6 +148,7 @@ public:
 
 	void			SetWeight( const int weight[ELEMNUM] );
 	void			GetElement( int element[ELEMNUM] );
+	int				GetCharacter( int threshold, CHARACTER character[], int maxnumber ) const;
 
 	void			Display() const;
 	void			DisplayEffect() const;
