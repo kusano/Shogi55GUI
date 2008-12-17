@@ -14,6 +14,7 @@
 #endif
 
 static UINT SearchMove( CShogi55GUIView *view );
+static UINT PreSearchMove( CShogi55GUIView *view );
 
 // CShogi55GUIView
 
@@ -39,8 +40,8 @@ END_MESSAGE_MAP()
 // CShogi55GUIView コンストラクション/デストラクション
 
 CShogi55GUIView::CShogi55GUIView()
-	: ImageBackground( L"data\\backgroundc.png" )
-	//: ImageBackground( L"data\\background.png" )
+	//: ImageBackground( L"data\\backgroundc.png" )
+	: ImageBackground( L"data\\background.png" )
 	, ImageBoard( L"data\\board.png" )
 	, ImagePiece( L"data\\piece.png" )
 	, ImageSelect( L"data\\select.png" )
@@ -50,6 +51,7 @@ CShogi55GUIView::CShogi55GUIView()
 	, SelectPosition( -1 )
 	, TurnBoard( false )
 	, SearchThread( NULL )
+	, PreSearchThread( NULL )
 {
 	PlayerType[0] = 1;
 	PlayerType[1] = 0;
@@ -126,7 +128,7 @@ void CShogi55GUIView::OnDraw(CDC* pDC)
 
 	//	背景
 	g.DrawImage( &ImageBackground, 0, 0 );
-    //g.DrawImage( &ImageBoard, 0, 0 );
+    g.DrawImage( &ImageBoard, 0, 0 );
 
 	//	タイマー
 	DrawTimer( &g );
@@ -447,10 +449,36 @@ void CShogi55GUIView::Move( MOVE move )
 		else
 		{
 			Mode = M_HUMANTURN;
+
+			if ( PlayerType[ Board.GetTurn()^1 ] != 1 )
+				GetBotPreMove();
 		}
 	}
 
 	InvalidateRect( NULL, FALSE );
+
+	////	詰みチェック
+	//if ( Board.IsFinished()  ||
+	//	 Board.IsCheckmated( 0 )  ||  Board.IsCheckmated( 1 ) )
+	//{
+	//	if ( Board.GetValue() > 0 )
+	//		::AfxMessageBox( _T("先手の勝ちです") );
+	//	else
+	//		::AfxMessageBox( _T("後手の勝ちです") );
+	//}
+
+	//if ( PlayerType[ Board.GetTurn() ] == 0 )
+	//{
+	//	Mode = M_BOTTUNRN;
+	//	GetBotMove();
+	//}
+	//else
+	//{
+	//	Mode = M_HUMANTURN;
+
+	//	if ( PlayerType[ Board.GetTurn()^1 ] != 1 )
+	//		GetBotPreMove();
+	//}
 }
 
 
@@ -462,6 +490,18 @@ void CShogi55GUIView::GetBotMove()
 	SearchThread->ResumeThread();
 
 	SetTimer( TIMER_SEARCH, 30, NULL );
+}
+
+
+
+void CShogi55GUIView::GetBotPreMove()
+{
+	PreSearchThread = ::AfxBeginThread( (AFX_THREADPROC)PreSearchMove, this,
+					THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED );
+	PreSearchThread->m_bAutoDelete = FALSE;
+	PreSearchThread->ResumeThread();
+
+	SetTimer( TIMER_PRESEARCH, 30, NULL );
 }
 
 
@@ -626,6 +666,16 @@ void CShogi55GUIView::OnLButtonDown(UINT nFlags, CPoint point)
 
 static UINT SearchMove( CShogi55GUIView *view )
 {
+	//	前探索中なら終了まで待つ
+	if ( view->PreSearchThread != NULL )
+	{
+		view->Bot.Halt();
+		while ( view->PreSearchThread != NULL )
+		{
+			::Sleep(1);
+		}
+	}
+	
 	//	残手数数の予測
 	//	現在0手なら残り40手　30手なら16手　この間線形
 	//	30手目以降は16手と想定
@@ -646,6 +696,21 @@ static UINT SearchMove( CShogi55GUIView *view )
 
 	return 0;
 }
+
+
+static UINT PreSearchMove( CShogi55GUIView *view )
+{
+	//	残り時間の設定
+	view->Bot.SetTimeLimit( 999000 );
+
+	//	探索実行
+	view->BestMove = view->Bot.GetNext( &view->Board );
+
+	return 0;
+}
+
+
+
 void CShogi55GUIView::OnTimer(UINT_PTR nIDEvent)
 {
 	switch ( nIDEvent )
@@ -665,6 +730,19 @@ void CShogi55GUIView::OnTimer(UINT_PTR nIDEvent)
 		}
 		}
 		break;
+	case TIMER_PRESEARCH:
+		{
+		DWORD code;
+		::GetExitCodeThread( PreSearchThread->m_hThread, &code );
+		if ( code != STILL_ACTIVE )
+		{
+			PreSearchThread->Delete();
+			PreSearchThread = NULL;
+
+			KillTimer( TIMER_PRESEARCH );
+		}
+		}
+		break;
 	case TIMER_TIMER:
 		InvalidateRect( CRect(452,12,452+9*12,12+4*24), FALSE );
 		break;
@@ -678,12 +756,13 @@ void CShogi55GUIView::OnTimer(UINT_PTR nIDEvent)
 
 void CShogi55GUIView::OnUpdateNewgame(CCmdUI *pCmdUI)
 {
-	pCmdUI->Enable( SearchThread == NULL );
+	pCmdUI->Enable( SearchThread == NULL  &&  PreSearchThread == NULL );
 }
 
 void CShogi55GUIView::OnUpdateUndo(CCmdUI *pCmdUI)
 {
-	pCmdUI->Enable( SearchThread == NULL  &&  Board.GetStep() >= 2 );
+	pCmdUI->Enable( SearchThread == NULL  &&  PreSearchThread == NULL  &&
+					Board.GetStep() >= 2 );
 }
 
 void CShogi55GUIView::OnUpdateRotate(CCmdUI *pCmdUI)
@@ -693,7 +772,7 @@ void CShogi55GUIView::OnUpdateRotate(CCmdUI *pCmdUI)
 
 void CShogi55GUIView::OnUpdateStop(CCmdUI *pCmdUI)
 {
-	pCmdUI->Enable( SearchThread != NULL );
+	pCmdUI->Enable( SearchThread != NULL  ||  PreSearchThread != NULL );
 }
 
 void CShogi55GUIView::OnUpdateHint(CCmdUI *pCmdUI)
@@ -702,7 +781,7 @@ void CShogi55GUIView::OnUpdateHint(CCmdUI *pCmdUI)
 
 void CShogi55GUIView::OnUpdateEdit(CCmdUI *pCmdUI)
 {
-	pCmdUI->Enable( SearchThread == NULL );
+	pCmdUI->Enable( SearchThread == NULL  &&  PreSearchThread == NULL );
 }
 
 int CShogi55GUIView::OnCreate(LPCREATESTRUCT lpCreateStruct)

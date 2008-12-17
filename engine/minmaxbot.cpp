@@ -25,7 +25,8 @@ STATE CMinMaxBot::State;
 CMinMaxBot::CMinMaxBot() :
 	MaxDepth( 99 ),
 	TimeLimit( 999000 ),
-	DisplayMode( DM_NONE )
+	DisplayMode( DM_NONE ),
+	BeforeStep( -99 )
 {
 	//	State::tree.child初期化
 	for ( int i=0; i<sizeof State.tree/sizeof State.tree[0]; i++ )
@@ -103,10 +104,14 @@ MOVE CMinMaxBot::GetNext( const CBoard *board, vector<MOVE> *sequence/*=NULL*/, 
 
 	HaltFlag = false;
 
-	MOVE move = GetMinMax( board );
+	CBoard b = *board;
+
+	MOVE move = GetBookMove( &b );
+	if ( move == MOVE::null )
+		move = GetMinMax( &b );
 	
 	if ( DisplayMode == DM_NORMAL )
-		printf( "BestMove %s\n\n", move.ToString(board).c_str() );
+		printf( "BestMove %s\n\n", move.ToString(&b).c_str() );
 
 	if ( sequence != NULL )
 		*sequence = BestSequence[0];
@@ -151,6 +156,42 @@ STATE *CMinMaxBot::GetState() const
 
 
 /*
+ *	GetBookMove
+ *		定跡（？）中の手を返す
+ */
+MOVE CMinMaxBot::GetBookMove( const CBoard *board )
+{
+	struct { const char *board; unsigned int move; } book[] = {
+		{ "nlfhjdaaaaaaaaaaaaacigekm000000000000+", 0x00001e26 },
+		{ "nlfhjdaaaaaaaacaaaaaigekm000000000000-", 0x00001a0c },
+		{ "nlfhjdaaaaaaaaaiaaacagekm000000000000-", 0x00001d0b },
+		{ "nlfhjdaaaaiaaaaaaaacagekm000000000000-", 0x0000160f },
+		{ "nlfhjiaaaaaaaaaaaaacagekm100000000000-", 0x00000f09 },
+		{ "nlfhjdaaaaaaaaagaaaciaekm000000000000-", 0x00001d0b },
+		{ "nlfhjdaaaaaaaaaaagaciaekm000000000000-", 0x0000110b },
+		{ "nlfhjdaaaaaaagaaaaaciaekm000000000000-", 0x0000110a },
+		{ "nlfhjdaaagaaaaaaaaaciaekm000000000000-", 0x0000130b },
+		{ "nlfhjdaaaaaaaaaaeaacigakm000000000000-", 0x0000120a },
+		{ "nlfhjdaaaaaaaaaaaeacigakm000000000000-", 0x0000120a },
+		{ "nlfhjdaaaaaaaaaaaaecigakm000000000000-", 0x0000120a },
+		{ "nlfhjdaaaaaaaaaaakacigeam000000000000-", 0x0000110b },
+		{ "nlfhjdaaaaaaaaaaaakcigeam000000000000-", 0x0000110b },
+		{ "nlfhjdaaaaaaaaaaaamcigeka000000000000-", 0x0000120a },
+	};
+
+	string s = board->ToString();
+	MOVE m = MOVE::null;
+
+	for ( int i=0; i<sizeof book/sizeof book[0]; i++ )
+		if ( book[i].board == s )
+			m.FromInt( book[i].move );
+
+	return m;
+}
+
+
+
+/*
  *	GetMinMax
  *		MinMax法で最善手を探す
  */
@@ -165,6 +206,13 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 		BestSequence[i].clear();
 	NullMoveSearch = false;
 	EvaluateCount = 0;
+
+	if ( board->GetStep() == BeforeStep + 1 )
+		for ( int i=0; i<MAXDEPTH-1; i++ )
+			KillerMove[i] = KillerMove[i+1];
+	else
+		for ( int i=0; i<MAXDEPTH-1; i++ )
+			KillerMove[i] = MOVE::null;
 
 	CBoard b = *board;
 
@@ -260,6 +308,8 @@ MOVE CMinMaxBot::GetMinMax( const CBoard *board )
 	if ( bestsequence.size() != 0 )
 		BestSequence[0] = bestsequence;
 
+	BeforeStep = b.GetStep();
+
 	return BestMove;
 }
 
@@ -345,8 +395,9 @@ int CMinMaxBot::MinMax( CBoard *board, int depth, int maxdepth, int alpha, int b
 	bool checkmated = ! finished ? board->IsCheckmated(board->GetTurn()) : false;
 
 	//	末端
-	if ( depth >= maxdepth  ||
-		 finished  ||  checkmated )
+	if ( ( depth >= maxdepth  ||
+		 finished  ||  checkmated )  &&
+		 depth > 0 )
 	{
 		if ( finished )
 			best = Evaluate(board) * board->GetTurnSign();

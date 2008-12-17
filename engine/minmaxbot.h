@@ -90,6 +90,7 @@ private:
 	vector<MOVE>BestSequence[MAXDEPTH];	//	深さごとの読み筋
 	bool		NullMoveSearch;			//	NullMove探索中
 	int			CurrentDepth;			//	現在の探索深さ
+	int			BeforeStep;				//	前回渡された盤面のステップ数
 
 	int			MaxDepth;				//	最大深さ
 	int			TimeLimit;				//	制限時間 [ms]　0で無効
@@ -99,6 +100,7 @@ private:
 	int			DisplayMode;			//	状態の表示方法
 	bool		HaltFlag;				//	trueになったら強制終了
 
+	MOVE		GetBookMove( const CBoard *board );
 	MOVE		GetMinMax( const CBoard *board );
 	int			MinMax( CBoard *board, int depth, int maxdepth, int alpha, int beta, int nodeid );
 	int			Quiescence( CBoard *board, int depth, int maxdepth, int alpha, int beta );

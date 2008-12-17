@@ -565,6 +565,27 @@ bool CBoard::IsFinished() const
 
 
 /*
+ *	IsFinished2
+ *		試合が終了しているか
+ *		千日手を考慮しない
+ */
+bool CBoard::IsFinished2() const
+{
+	//	玉が取られている
+	if ( Hand[GYOKU] > 0  ||  Hand[GYOKU+1] > 0 )
+		return true;
+
+	//	相手の手番で自玉に駒が効いている
+	if ( Turn == 0  &&  IsCheckedGyoku(1)  ||
+		 Turn == 1  &&  IsCheckedGyoku(0) )
+		return true;
+
+	return false;
+}
+
+
+
+/*
  *	IsEffected
  *		posの位置にturnの駒が効いているか
  *		far==trueなら飛駒のみを考慮

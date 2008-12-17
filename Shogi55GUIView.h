@@ -15,6 +15,7 @@
 class CShogi55GUIView : public CView
 {
 	friend UINT SearchMove( CShogi55GUIView *view );
+	friend UINT PreSearchMove( CShogi55GUIView *view );
 
 public:
 	enum MODE
@@ -30,8 +31,9 @@ private:
 	static const int	PH		= 48;		//	駒高
 
 	static const int	TIMER_SEARCH	= 100;	//	探索が終了したかチェック
-	static const int	TIMER_TIMER		= 101;	//	時計を進める
-	static const int	TIMER_STATE		= 102;	//	探索状態表示用
+	static const int	TIMER_PRESEARCH	= 101;	//	前探索が終了したかチェック
+	static const int	TIMER_TIMER		= 102;	//	時計を進める
+	static const int	TIMER_STATE		= 103;	//	探索状態表示用
 
 	struct LOG
 	{
@@ -69,11 +71,13 @@ private:
 	vector<LOG>	Log;				//	待った用
 
 	CWinThread *SearchThread;
+	CWinThread *PreSearchThread;
 
 	bool		PositionToXY( int pos, int *x, int *y );
 	int			XYToPosition( int x, int y );
 	void		Move( MOVE move );
 	void		GetBotMove();
+	void		GetBotPreMove();
 	void		DrawTimer( Graphics *g );
 	void		NewGame();
 	void		Undo();

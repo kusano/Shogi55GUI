@@ -114,7 +114,7 @@ BEGIN
     END
     POPUP "ヘルプ(&H)"
     BEGIN
-        MENUITEM "バージョン情報 Shogi55GUI(&A)...",   ID_APP_ABOUT
+        MENUITEM "バージョン情報 Tohske(&A)...",       ID_APP_ABOUT
     END
 END
 
@@ -147,15 +147,16 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 235, 55
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "バージョン情報 Shogi55GUI"
+IDD_ABOUTBOX DIALOGEX 0, 0, 282, 72
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "バージョン情報 Tohske"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
-    LTEXT           "Shogi55GUI Version 1.0",IDC_STATIC,40,10,119,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2008",IDC_STATIC,40,25,119,8
-    DEFPUSHBUTTON   "OK",IDOK,178,7,50,16,WS_GROUP
+    LTEXT           "Tohske Version 2008",IDC_STATIC,40,10,119,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2008 草野　一彦",IDC_STATIC,40,25,119,8
+    DEFPUSHBUTTON   "OK",IDOK,228,6,50,16,WS_GROUP
+    LTEXT           "data/toolbar.bmp, data/toolbarm.bmp, data/toolbard.bmp:\nCopyright (C) Everaldo Coelho and YellowIcon\nThe licenses are data/toolbar_gpl.txt and data/toolbar_lgpl.txt",IDC_STATIC,40,40,230,32
 END
 
 IDR_MAINFRAME DIALOGEX 0, 0, 330, 16
@@ -270,7 +271,7 @@ BEGIN
     BEGIN
         BLOCK "041103a4"
         BEGIN
-            VALUE "CompanyName", "篠原研"
+            VALUE "CompanyName", "篠原研究室"
             VALUE "FileDescription", "５五将棋ソフト"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Shogi55GUI.exe"
@@ -298,9 +299,9 @@ BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 228
+        RIGHTMARGIN, 275
         TOPMARGIN, 7
-        BOTTOMMARGIN, 48
+        BOTTOMMARGIN, 65
     END
 
     IDD_NEWGAME, DIALOG

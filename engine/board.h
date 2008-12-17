@@ -138,6 +138,7 @@ public:
 	int				GetTurnSign() const;
 	int				GetStep() const;
 	bool			IsFinished() const;
+	bool			IsFinished2() const;
 	bool			IsEffected( int pos, int turn, bool far=false ) const;
 	bool			IsCheckmated( int turn ) const;
 	bool			IsCheckedGyoku( int turn ) const;
